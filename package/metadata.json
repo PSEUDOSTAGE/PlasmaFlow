@@ -1,0 +1,20 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "PSEUDOSTAGE"
+            }
+        ],
+        "Description": "A Wayland-first dynamic tiling script for KDE Plasma 6, built for CachyOS. Supports master/stack, columns, and floating layouts with per-app rules and gap control.",
+        "Icon": "window-duplicate",
+        "Id": "cachy-tile",
+        "License": "GPL-3.0",
+        "Name": "CachyTile",
+        "Version": "0.2.0"
+    },
+    "X-KDE-ConfigModule": "kwin/effects/configs/kcm_kwin4_genericscripted",
+    "X-Plasma-API": "javascript",
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-MainScript": "code/main.js"
+}

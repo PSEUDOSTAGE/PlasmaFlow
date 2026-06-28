@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  CachyTile settings panel for the KWin Scripts KCM.
+  Loaded by kcm_kwin4_genericscripted (declared via X-KDE-ConfigModule in
+  metadata.json). Each control's objectName is kcfg_<entryName>, matching an
+  <entry> in ../config/main.xml — KConfigDialogManager auto-loads and saves them.
+-->
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <layout class="QVBoxLayout" name="rootLayout">
+
+   <item>
+    <widget class="QGroupBox" name="groupGaps">
+     <property name="title"><string>Gaps</string></property>
+     <layout class="QFormLayout" name="formGaps">
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelGap"><property name="text"><string>Inner gap (px):</string></property></widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QSpinBox" name="kcfg_gap">
+        <property name="toolTip"><string>Space, in pixels, between adjacent tiled windows.</string></property>
+        <property name="minimum"><number>0</number></property>
+        <property name="maximum"><number>64</number></property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="labelOuterGap"><property name="text"><string>Outer gap (px):</string></property></widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QSpinBox" name="kcfg_outerGap">
+        <property name="toolTip"><string>Space, in pixels, between the tiled area and the screen or panel edges.</string></property>
+        <property name="minimum"><number>0</number></property>
+        <property name="maximum"><number>64</number></property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+
+   <item>
+    <widget class="QGroupBox" name="groupLayout">
+     <property name="title"><string>Layout</string></property>
+     <layout class="QFormLayout" name="formLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelDefaultLayout"><property name="text"><string>Default layout:</string></property></widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="kcfg_defaultLayout">
+        <property name="toolTip"><string>Layout used on a desktop with no pinned or saved layout.
+master-stack: one master + a stack column.
+columns: equal vertical columns.
+monocle: one fullscreen window at a time.
+spotlight: master fullscreen, others in the corners.</string></property>
+        <item><property name="text"><string>master-stack</string></property></item>
+        <item><property name="text"><string>columns</string></property></item>
+        <item><property name="text"><string>monocle</string></property></item>
+        <item><property name="text"><string>spotlight</string></property></item>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+
+   <item>
+    <widget class="QGroupBox" name="groupMaster">
+     <property name="title"><string>Master-Stack &amp; Spotlight</string></property>
+     <layout class="QFormLayout" name="formMaster">
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelMasterRatio"><property name="text"><string>Default master width:</string></property></widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QDoubleSpinBox" name="kcfg_defaultMasterRatio">
+        <property name="toolTip"><string>Fraction of the usable width given to the master pane (master-stack only). Adjust live with Meta+H / Meta+L.</string></property>
+        <property name="decimals"><number>2</number></property>
+        <property name="minimum"><double>0.10</double></property>
+        <property name="maximum"><double>0.90</double></property>
+        <property name="singleStep"><double>0.05</double></property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="labelRatioStep"><property name="text"><string>Master ratio step per keypress:</string></property></widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QDoubleSpinBox" name="kcfg_masterRatioStep">
+        <property name="toolTip"><string>How much the master width changes on each Meta+H / Meta+L press.</string></property>
+        <property name="decimals"><number>2</number></property>
+        <property name="minimum"><double>0.01</double></property>
+        <property name="maximum"><double>0.20</double></property>
+        <property name="singleStep"><double>0.01</double></property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="labelSpotlight"><property name="text"><string>Spotlight corner size:</string></property></widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QDoubleSpinBox" name="kcfg_spotlightCornerRatio">
+        <property name="toolTip"><string>Spotlight layout only: size of each corner window, as a fraction of the screen's width and height.</string></property>
+        <property name="decimals"><number>2</number></property>
+        <property name="minimum"><double>0.10</double></property>
+        <property name="maximum"><double>0.50</double></property>
+        <property name="singleStep"><double>0.01</double></property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+
+   <item>
+    <widget class="QGroupBox" name="groupBehaviour">
+     <property name="title"><string>Behaviour</string></property>
+     <layout class="QVBoxLayout" name="vboxBehaviour">
+      <item>
+       <widget class="QCheckBox" name="kcfg_floatOnStart">
+        <property name="text"><string>Float new windows by default</string></property>
+        <property name="toolTip"><string>Newly opened windows start floating instead of tiling. Pull one into the layout on demand with Meta+F.</string></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="kcfg_persistSession">
+        <property name="text"><string>Remember layout per desktop</string></property>
+        <property name="toolTip"><string>Remember each desktop's layout and master width across sessions. Note: not yet functional on the current KWin build (no script write-config API).</string></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="kcfg_animationsEnabled">
+        <property name="text"><string>Enable animations (not implemented yet)</string></property>
+        <property name="toolTip"><string>Reserved for future animation control. Not implemented yet — KWin animates window geometry changes itself.</string></property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+
+   <item>
+    <widget class="QGroupBox" name="groupFloat">
+     <property name="title"><string>Floating App Rules</string></property>
+     <layout class="QFormLayout" name="formFloat">
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelFloatClasses"><property name="text"><string>Always-float classes:</string></property></widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="kcfg_floatClasses">
+        <property name="toolTip"><string>Comma-separated window classes (lowercase). Dialogs, splash screens, and non-resizable windows always float regardless of this list.</string></property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="labelDesktopLayouts"><property name="text"><string>Per-desktop pinned layouts:</string></property></widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="kcfg_desktopLayouts">
+        <property name="toolTip"><string>Pin a layout to a virtual desktop by 1-based number, e.g. 1=master-stack,2=columns,3=spotlight. Meta+T overrides for the session.</string></property>
+        <property name="placeholderText"><string>1=master-stack,2=columns,3=spotlight</string></property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+
+   <item>
+    <widget class="QLabel" name="hint">
+     <property name="text"><string>Changes take effect after the script reloads: untick CachyTile in the KWin Scripts list, Apply, re-tick it, Apply. (KWin does not notify running scripts of config changes.)
+
+Window-class names are lowercase, matched against class or title. Shortcuts are rebindable in System Settings → Shortcuts → KWin Scripts.</string></property>
+     <property name="wordWrap"><bool>true</bool></property>
+     <property name="enabled"><bool>false</bool></property>
+    </widget>
+   </item>
+
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation"><enum>Qt::Vertical</enum></property>
+     <property name="sizeHint" stdset="0"><size><width>20</width><height>10</height></size></property>
+    </spacer>
+   </item>
+
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

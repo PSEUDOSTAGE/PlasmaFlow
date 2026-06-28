@@ -1,0 +1,9 @@
+# Build artifacts from `make package`
+*.kwinscript
+# Transient copy created during packaging (real source is package/metadata.json)
+/metadata.json
+
+# Editor / OS cruft
+*~
+*.swp
+.DS_Store

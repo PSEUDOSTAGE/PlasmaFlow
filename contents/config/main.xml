@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  CachyTile configuration schema (KConfigXT).
+  This declares the config keys, types, defaults, and descriptions. The KWin
+  Scripts KCM uses it (together with ui/config.* whose controls are named
+  kcfg_<entryName>) to render and persist the Configure dialog. The script
+  reads these same keys at load time via readConfig(key, default).
+-->
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+                          http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+
+  <kcfgfile name=""/>
+  <group name="">
+
+    <entry name="gap" type="Int">
+      <label>Inner gap (px)</label>
+      <tooltip>Space, in pixels, between adjacent tiled windows.</tooltip>
+      <default>8</default>
+      <min>0</min>
+      <max>64</max>
+    </entry>
+
+    <entry name="outerGap" type="Int">
+      <label>Outer gap (px)</label>
+      <tooltip>Space, in pixels, between the tiled area and the screen or panel edges.</tooltip>
+      <default>8</default>
+      <min>0</min>
+      <max>64</max>
+    </entry>
+
+    <!-- Enum (not String) so the combo box stores the choice *name*
+         (e.g. master-stack), not its index. Choice order must match the
+         QComboBox item order in ../ui/config.ui. -->
+    <entry name="defaultLayout" type="Enum">
+      <label>Default layout</label>
+      <tooltip>Layout used on a desktop with no pinned or saved layout: master-stack, columns, monocle, or spotlight.</tooltip>
+      <choices>
+        <choice name="master-stack"/>
+        <choice name="columns"/>
+        <choice name="monocle"/>
+        <choice name="spotlight"/>
+      </choices>
+      <default>master-stack</default>
+    </entry>
+
+    <entry name="defaultMasterRatio" type="Double">
+      <label>Default master width</label>
+      <tooltip>Fraction of the usable width given to the master pane (master-stack only). Adjust live with Meta+H / Meta+L.</tooltip>
+      <default>0.5</default>
+      <min>0.1</min>
+      <max>0.9</max>
+    </entry>
+
+    <entry name="masterRatioStep" type="Double">
+      <label>Master ratio step per keypress</label>
+      <tooltip>How much the master width changes on each Meta+H / Meta+L press.</tooltip>
+      <default>0.05</default>
+      <min>0.01</min>
+      <max>0.20</max>
+    </entry>
+
+    <entry name="spotlightCornerRatio" type="Double">
+      <label>Spotlight corner size</label>
+      <tooltip>Spotlight layout only: size of each corner window, as a fraction of the screen's width and height.</tooltip>
+      <default>0.28</default>
+      <min>0.10</min>
+      <max>0.50</max>
+    </entry>
+
+    <entry name="floatOnStart" type="Bool">
+      <label>Float new windows by default</label>
+      <tooltip>Newly opened windows start floating instead of tiling. Pull one into the layout on demand with Meta+F.</tooltip>
+      <default>false</default>
+    </entry>
+
+    <entry name="animationsEnabled" type="Bool">
+      <label>Enable animations (not implemented yet)</label>
+      <tooltip>Reserved for future animation control. Not implemented yet — KWin animates window geometry changes itself.</tooltip>
+      <default>true</default>
+    </entry>
+
+    <entry name="persistSession" type="Bool">
+      <label>Remember layout per desktop</label>
+      <tooltip>Remember each desktop's layout and master width across sessions. Note: not yet functional on the current KWin build (no script write-config API).</tooltip>
+      <default>true</default>
+    </entry>
+
+    <entry name="floatClasses" type="String">
+      <label>Always-float window classes</label>
+      <tooltip>Comma-separated window classes (lowercase) that should never tile. Dialogs, splash screens, and non-resizable windows always float regardless.</tooltip>
+      <default>steam,plasmashell,krunner,yakuake,spectacle,kruler,plasma-desktop</default>
+    </entry>
+
+    <entry name="desktopLayouts" type="String">
+      <label>Per-desktop pinned layouts (Model B)</label>
+      <tooltip>Pin a layout to a virtual desktop by its 1-based number. Format: 1=master-stack,2=columns,3=spotlight. Meta+T overrides for the session.</tooltip>
+      <default></default>
+    </entry>
+
+  </group>
+</kcfg>
