@@ -47,6 +47,8 @@ make package
 | Meta + Return  | Swap focused window with master |
 | Meta + J       | Focus next window               |
 | Meta + K       | Focus previous window           |
+| Meta + Shift + J | Move focused window down in tile order |
+| Meta + Shift + K | Move focused window up in tile order   |
 | Meta + F       | Toggle float for focused window |
 | Meta + L       | Increase master width (master-stack) |
 | Meta + H       | Decrease master width (master-stack) |
@@ -100,6 +102,7 @@ cachy-tile/
 - [x] Spotlight layout (v0.2)
 - [x] Per-desktop layout pinning — Model B (v0.2)
 - [x] Minimized windows drop out of the layout; the rest reflow
+- [x] Move window in tile order (Meta+Shift+J / Meta+Shift+K) (v0.3)
 - [ ] Session persistence — layout + ratio per desktop *(not yet working: the target KWin build has no script write-config API)*
 - [ ] Spiral / Fibonacci layout
 - [ ] Scratchpad (hidden floating layer)

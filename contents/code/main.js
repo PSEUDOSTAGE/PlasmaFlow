@@ -452,6 +452,29 @@ function focusInDirection(window, dir) {
 function focusNext(window) { focusInDirection(window, 1); }
 function focusPrev(window) { focusInDirection(window, -1); }
 
+// Move the focused window one slot along the tile order, swapping it with its
+// nearest visible (non-minimized) neighbour in that direction, then retile.
+// `dir` is +1 (toward the end / "down") or -1 (toward the start / "up").
+// Does not wrap: moving past either end is a no-op. The window keeps focus.
+function moveInDirection(window, dir) {
+    const state = getState(window);
+    if (!state || state.windows.length < 2) return;
+
+    const from = state.windows.indexOf(window);
+    if (from === -1) return;
+
+    for (let i = from + dir; i >= 0 && i < state.windows.length; i += dir) {
+        if (!state.windows[i].minimized) {
+            [state.windows[from], state.windows[i]] = [state.windows[i], state.windows[from]];
+            tile(window);
+            return;
+        }
+    }
+}
+
+function moveNext(window) { moveInDirection(window, 1); }
+function movePrev(window) { moveInDirection(window, -1); }
+
 function toggleFloat(window) {
     const state = getState(window);
     if (!state) return;
@@ -523,6 +546,20 @@ registerShortcut(
     "CachyTile: Focus Prev",
     "Meta+K",
     () => { if (workspace.activeWindow) focusPrev(workspace.activeWindow); }
+);
+
+registerShortcut(
+    "CachyTile: Move Window Down",
+    "CachyTile: Move Window Down",
+    "Meta+Shift+J",
+    () => { if (workspace.activeWindow) moveNext(workspace.activeWindow); }
+);
+
+registerShortcut(
+    "CachyTile: Move Window Up",
+    "CachyTile: Move Window Up",
+    "Meta+Shift+K",
+    () => { if (workspace.activeWindow) movePrev(workspace.activeWindow); }
 );
 
 registerShortcut(
