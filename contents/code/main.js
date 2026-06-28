@@ -132,7 +132,9 @@ function getState(window) {
     const key = stateKey(screen, desktops[0].id);
     if (!layoutState[key]) {
         const saved  = restoreState(key);
-        const pinned = pinnedLayout(desktops[0].number);
+        // VirtualDesktop exposes the 1-based number as `x11DesktopNumber`
+        // (there is no `.number` property — verified on KWin 6 / Wayland).
+        const pinned = pinnedLayout(desktops[0].x11DesktopNumber);
 
         // Priority: pinned (Model B) > saved session > global default
         // If pinned exists, it always wins layout (but saved ratio still applies).
@@ -475,6 +477,36 @@ function moveInDirection(window, dir) {
 function moveNext(window) { moveInDirection(window, 1); }
 function movePrev(window) { moveInDirection(window, -1); }
 
+// Send the focused window to virtual desktop `number` (1-based) without
+// following it. Setting window.desktops fires the per-window desktopsChanged
+// handler (onDesktopMove), which retiles both the source and destination — so
+// we don't retile here ourselves. No-op if that desktop doesn't exist.
+// Send the focused window to the previous/next virtual desktop (dir -1/+1)
+// without following it. Clamps at the ends (no wrap). Setting window.desktops
+// fires the per-window desktopsChanged handler (onDesktopMove), which retiles
+// both the source and destination — so we don't retile here. Desktops are
+// matched by id (UUID); KWin may hand back distinct wrapper objects for the
+// same desktop, so object identity (===) isn't reliable.
+function sendToAdjacentDesktop(window, dir) {
+    const desktops = workspace.desktops;
+    if (!desktops || desktops.length < 2) return;
+    if (!window.desktops || window.desktops.length === 0) return;
+
+    const currentId = window.desktops[0].id;
+    let idx = -1;
+    for (let i = 0; i < desktops.length; i++) {
+        if (desktops[i].id === currentId) { idx = i; break; }
+    }
+    if (idx === -1) return;
+
+    const targetIdx = idx + dir;
+    if (targetIdx < 0 || targetIdx >= desktops.length) return;  // no wrap
+
+    const target = desktops[targetIdx];
+    window.desktops = [target];
+    osd.show("CachyTile: → " + target.name);
+}
+
 function toggleFloat(window) {
     const state = getState(window);
     if (!state) return;
@@ -560,6 +592,26 @@ registerShortcut(
     "CachyTile: Move Window Up",
     "Meta+Shift+K",
     () => { if (workspace.activeWindow) movePrev(workspace.activeWindow); }
+);
+
+// Send focused window to the previous/next virtual desktop. We use arrow keys
+// (not Meta+Shift+<digit>): on this KWin/Wayland, script-registered shortcuts on
+// the shifted number row never fire (Shift+1 emits the shifted-symbol keysym,
+// which doesn't match Key_1), whereas arrow keys work. NOTE: Meta+Left/Right is
+// KDE's *default* for Quick Tile Left/Right — tiling-script users typically
+// clear that (documented in the README).
+registerShortcut(
+    "CachyTile: Send to Previous Desktop",
+    "CachyTile: Send to Previous Desktop",
+    "Meta+Left",
+    () => { if (workspace.activeWindow) sendToAdjacentDesktop(workspace.activeWindow, -1); }
+);
+
+registerShortcut(
+    "CachyTile: Send to Next Desktop",
+    "CachyTile: Send to Next Desktop",
+    "Meta+Right",
+    () => { if (workspace.activeWindow) sendToAdjacentDesktop(workspace.activeWindow, 1); }
 );
 
 registerShortcut(

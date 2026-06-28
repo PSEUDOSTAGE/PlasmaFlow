@@ -49,6 +49,8 @@ make package
 | Meta + K       | Focus previous window           |
 | Meta + Shift + J | Move focused window down in tile order |
 | Meta + Shift + K | Move focused window up in tile order   |
+| Meta + Left    | Send focused window to previous desktop |
+| Meta + Right   | Send focused window to next desktop     |
 | Meta + F       | Toggle float for focused window |
 | Meta + L       | Increase master width (master-stack) |
 | Meta + H       | Decrease master width (master-stack) |
@@ -58,6 +60,9 @@ Shortcuts can be rebound in **System Settings → Shortcuts → KWin Scripts**.
 > **⚠️ Meta+T conflicts with KDE's built-in "Toggle Tiles Editor".**
 > KWin ships with **Meta+T** bound to its tile-editor overlay, so out of the box it will fire instead of (or alongside) CachyTile's *Cycle layout*. To free it up:
 > **System Settings → Keyboard → Shortcuts**, search **`Toggle Tiles Editor`**, click its **Meta+T** chip and clear it, then **Apply**.
+
+> **⚠️ Meta+Left / Meta+Right are KDE's default "Quick Tile Left/Right".**
+> Send-to-desktop uses these. If you still have KDE's quick-tiling on those keys, clear it: **System Settings → Keyboard → Shortcuts**, search **`Quick Tile`**, and clear the **Meta+Left/Right** chips. (Most tiling-script users have already disabled KDE quick-tiling.) *Why arrows and not Meta+Shift+1–9? KWin can't fire script shortcuts on the shifted number row under Wayland, and plain Meta+1–9 is taken by the task manager.*
 
 ---
 
@@ -103,6 +108,7 @@ cachy-tile/
 - [x] Per-desktop layout pinning — Model B (v0.2)
 - [x] Minimized windows drop out of the layout; the rest reflow
 - [x] Move window in tile order (Meta+Shift+J / Meta+Shift+K) (v0.3)
+- [x] Send window to previous/next desktop (Meta+Left / Meta+Right) (v0.3)
 - [ ] Session persistence — layout + ratio per desktop *(not yet working: the target KWin build has no script write-config API)*
 - [ ] Spiral / Fibonacci layout
 - [ ] Scratchpad (hidden floating layer)
