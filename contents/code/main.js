@@ -123,13 +123,19 @@ function plasmaEval(script) {
 // (signature "ss"). Fire-and-forget / best-effort, exactly like plasmaEval — a
 // no-op if plasmashell is down, since the OSD is purely informational.
 //
-// The icon is an icon-*theme name*, not a file path: showText hands it to a
-// Plasma IconItem that resolves it via the icon theme. We ship icons/plasma-flow.png
-// into hicolor (the Makefile installs it) so "plasma-flow" resolves to our logo.
+// The icon arg can be either an icon-*theme name* or an absolute *file path*.
+// We default to the theme name "plasma-flow" (portable; the Makefile installs
+// the PNG into hicolor). BUT on this build plasmashell's OSD does NOT reliably
+// resolve a freshly-installed hicolor name by theme name in a running session —
+// stock names work, ours showed a fallback — whereas it loads an absolute path
+// fine. So `make install` rewrites OSD_ICON (the @OSD_ICON@-tagged line below)
+// to the absolute path of the installed PNG. Source stays distributable; the
+// installed copy points at the real file. See CLAUDE.md "OSD icon".
+const OSD_ICON = "plasma-flow"; /* @OSD_ICON@ */
 function showOsd(text) {
     if (typeof callDBus !== "function") return;
     callDBus("org.kde.plasmashell", "/org/kde/osdService",
-             "org.kde.osdService", "showText", "plasma-flow", text);
+             "org.kde.osdService", "showText", OSD_ICON, text);
 }
 
 /**

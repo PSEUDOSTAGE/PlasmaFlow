@@ -29,8 +29,13 @@ install:
 	@rm -rf "$(INSTALL_DIR)/contents"
 	@cp -r $(CONTENTS_DIR) "$(INSTALL_DIR)/"
 	@cp $(PACKAGE_DIR)/metadata.json "$(INSTALL_DIR)/"
-	@# Install the logo into the hicolor icon theme so "plasma-flow" resolves by
-	@# name (used by the OSD and the plugin metadata).
+	@# Point the OSD icon at the absolute installed path. plasmashell's OSD does
+	@# not reliably resolve our hicolor icon by theme name in a running session,
+	@# but loads an absolute path fine (see CLAUDE.md "OSD icon"). We rewrite only
+	@# the installed copy; the committed source keeps the portable theme name.
+	@sed -i 's|^const OSD_ICON = .*@OSD_ICON@.*|const OSD_ICON = "$(ICON_DEST)"; /* @OSD_ICON@ */|' "$(INSTALL_DIR)/contents/code/main.js"
+	@# Install the logo into the hicolor icon theme (still used by the plugin
+	@# metadata / KCM listing, and as the OSD's portable fallback name).
 	@mkdir -p "$(ICON_DIR)"
 	@cp $(ICON_SRC) "$(ICON_DEST)"
 	@# Rebuild KDE's plugin + icon caches so the KCM discovers a newly-added
