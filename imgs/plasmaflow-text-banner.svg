@@ -32,7 +32,7 @@
 
   <!-- Icon: 200x200, centered vertically at y=200 -->
   <!-- Shifted left 125px to center the whole group -->
-  <g transform="translate(415, 200) translate(-100, -100) scale(0.78125)">
+  <g transform="translate(403, 200) translate(-100, -100) scale(0.78125)">
     <!-- Tile fills -->
     <g opacity="0.15">
       <rect x="110" y="34"  width="104" height="86"  rx="10" fill="url(#grad)"/>
@@ -54,12 +54,12 @@
     <path d="M 52 34 L 88 34 A 10 10 0 0 1 98 44 L 98 46 L 42 46 L 42 44 A 10 10 0 0 1 52 34 Z" fill="url(#grad)" opacity="0.7"/>
   </g>
 
-  <!-- Text: "CachyFlow" close to icon, vertically centered -->
+  <!-- Text: "PlasmaFlow" close to icon, vertically centered -->
   <!-- Icon right edge ~640, text starts at 660, font 80px -->
-  <text x="515" y="228"
+  <text x="483" y="230"
         font-family="'SF Pro Display', 'Inter', 'Segoe UI', 'Helvetica Neue', sans-serif"
-        font-size="80" font-weight="800" fill="#e0fff5" letter-spacing="-2">Cachy</text>
-  <text x="755" y="228"
+        font-size="80" font-weight="800" fill="#e0fff5" letter-spacing="-2">Plasma</text>
+  <text x="768" y="230"
         font-family="'SF Pro Display', 'Inter', 'Segoe UI', 'Helvetica Neue', sans-serif"
         font-size="80" font-weight="800" fill="url(#textFlow)" letter-spacing="-2">Flow</text>
 

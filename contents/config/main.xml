@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  CachyFlow configuration schema (KConfigXT).
+  PlasmaFlow configuration schema (KConfigXT).
   This declares the config keys, types, defaults, and descriptions. The KWin
   Scripts KCM uses it (together with ui/config.* whose controls are named
   kcfg_<entryName>) to render and persist the Configure dialog. The script

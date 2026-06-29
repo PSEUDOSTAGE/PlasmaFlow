@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  CachyFlow settings panel for the KWin Scripts KCM.
+  PlasmaFlow settings panel for the KWin Scripts KCM.
   Loaded by kcm_kwin4_genericscripted (declared via X-KDE-ConfigModule in
   metadata.json). Each control's objectName is kcfg_<entryName>, matching an
   <entry> in ../config/main.xml — KConfigDialogManager auto-loads and saves them.
@@ -161,7 +161,7 @@ spiral: Fibonacci spiral; split fraction follows master width.</string></propert
 
    <item>
     <widget class="QLabel" name="hint">
-     <property name="text"><string>Changes take effect after the script reloads: untick CachyFlow in the KWin Scripts list, Apply, re-tick it, Apply. (KWin does not notify running scripts of config changes.)
+     <property name="text"><string>Changes take effect after the script reloads: untick PlasmaFlow in the KWin Scripts list, Apply, re-tick it, Apply. (KWin does not notify running scripts of config changes.)
 
 Window-class names are lowercase, matched against class or title. Shortcuts are rebindable in System Settings → Shortcuts → KWin Scripts.</string></property>
      <property name="wordWrap"><bool>true</bool></property>

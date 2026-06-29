@@ -1,9 +1,9 @@
-SCRIPT_ID   = cachy-flow
+SCRIPT_ID   = plasma-flow
 INSTALL_DIR = $(HOME)/.local/share/kwin/scripts/$(SCRIPT_ID)
 PACKAGE_DIR = ./package
 CONTENTS_DIR = ./contents
-# Themed icon, referenced by name ("cachy-flow") from the OSD and metadata.
-ICON_SRC    = ./imgs/cachyflow-icon.png
+# Themed icon, referenced by name ("plasma-flow") from the OSD and metadata.
+ICON_SRC    = ./imgs/plasmaflow-icon.png
 ICON_DIR    = $(HOME)/.local/share/icons/hicolor/256x256/apps
 ICON_DEST   = $(ICON_DIR)/$(SCRIPT_ID).png
 
@@ -29,7 +29,7 @@ install:
 	@rm -rf "$(INSTALL_DIR)/contents"
 	@cp -r $(CONTENTS_DIR) "$(INSTALL_DIR)/"
 	@cp $(PACKAGE_DIR)/metadata.json "$(INSTALL_DIR)/"
-	@# Install the logo into the hicolor icon theme so "cachy-flow" resolves by
+	@# Install the logo into the hicolor icon theme so "plasma-flow" resolves by
 	@# name (used by the OSD and the plugin metadata).
 	@mkdir -p "$(ICON_DIR)"
 	@cp $(ICON_SRC) "$(ICON_DEST)"

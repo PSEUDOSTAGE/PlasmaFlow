@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="imgs/cachyflow-text-banner.svg" alt="CachyFlow" width="640">
+  <img src="imgs/plasmaflow-text-banner.svg" alt="PlasmaFlow" width="640">
 </p>
 
 <p align="center">
-  A Wayland-first dynamic tiling KWin script for KDE Plasma 6, built for CachyOS.<br>
+  A Wayland-first dynamic tiling KWin script for KDE Plasma 6.4+.<br>
   Fills the gap left by Bismuth (archived) with a clean, modern, Plasma 6-native codebase.
 </p>
 
@@ -23,22 +23,30 @@
 
 ---
 
+## Requirements
+
+- **KDE Plasma 6.4+ on Wayland.** Developed and tested against 6.4+; earlier 6.x releases expose different KWin scripting APIs and may fail to load.
+- **A running `plasmashell`.** Session persistence and the on-screen ratio/layout feedback are driven through plasmashell's scripting/OSD D-Bus interfaces. Both are best-effort: if plasmashell isn't running (or a future Plasma changes those interfaces), they silently no-op — tiling itself is unaffected.
+- X11 may work but is not a supported target.
+
+---
+
 ## Install
 
 ### From source
 ```bash
-git clone https://github.com/PSEUDOSTAGE/CachyFlow.git
-cd CachyFlow
+git clone https://github.com/PSEUDOSTAGE/PlasmaFlow.git
+cd PlasmaFlow
 make install
 make reload
 ```
 
-Then enable in **System Settings → Window Management → KWin Scripts → CachyFlow**.
+Then enable in **System Settings → Window Management → KWin Scripts → PlasmaFlow**.
 
 ### As .kwinscript (KDE Store / manual)
 ```bash
 make package
-# Import cachy-flow.kwinscript via System Settings → KWin Scripts → Import
+# Import plasma-flow.kwinscript via System Settings → KWin Scripts → Import
 ```
 
 ---
@@ -64,7 +72,7 @@ make package
 Shortcuts can be rebound in **System Settings → Shortcuts → KWin Scripts**.
 
 > **⚠️ Meta+T conflicts with KDE's built-in "Toggle Tiles Editor".**
-> KWin ships with **Meta+T** bound to its tile-editor overlay, so out of the box it will fire instead of (or alongside) CachyFlow's *Cycle layout*. To free it up:
+> KWin ships with **Meta+T** bound to its tile-editor overlay, so out of the box it will fire instead of (or alongside) PlasmaFlow's *Cycle layout*. To free it up:
 > **System Settings → Keyboard → Shortcuts**, search **`Toggle Tiles Editor`**, click its **Meta+T** chip and clear it, then **Apply**.
 
 > **⚠️ Meta+Left / Meta+Right are KDE's default "Quick Tile Left/Right".**
@@ -74,7 +82,7 @@ Shortcuts can be rebound in **System Settings → Shortcuts → KWin Scripts**.
 > The scratchpad toggle uses it. The primary binding (`Alt+`` ` ``) is unaffected; just clear the **Meta+`` ` ``** chip from that action in **System Settings → Keyboard → Shortcuts** if the toggle cycles app windows instead of summoning the scratchpad.
 
 > **⚠️ Meta+L is KDE's default "Lock Screen" shortcut.**
-> CachyFlow uses it to *grow the master width* (master-stack / spiral) or *corner size* (spotlight), so out of the box pressing it will lock the screen instead. To free it up: **System Settings → Keyboard → Shortcuts**, search **`Lock Screen`** (the *Screen Locking* action), click its **Meta+L** chip and clear it, then **Apply** — re-bind locking to another key first if you still want a lock shortcut.
+> PlasmaFlow uses it to *grow the master width* (master-stack / spiral) or *corner size* (spotlight), so out of the box pressing it will lock the screen instead. To free it up: **System Settings → Keyboard → Shortcuts**, search **`Lock Screen`** (the *Screen Locking* action), click its **Meta+L** chip and clear it, then **Apply** — re-bind locking to another key first if you still want a lock shortcut.
 
 ---
 
@@ -112,7 +120,7 @@ A hidden layer for windows you want out of the way but a keystroke away. It hold
 ## Project Structure
 
 ```
-CachyFlow/
+PlasmaFlow/
 ├── contents/
 │   ├── code/
 │   │   └── main.js       ← Tiling engine + KWin signal wiring
@@ -146,5 +154,5 @@ CachyFlow/
 
 ## Contributing
 
-Built by PSEUDOSTAGE for CachyOS and Plasma 6 power users. Not affiliated with CachyOS. PRs welcome.
+Built by PSEUDOSTAGE for KDE Plasma 6 power users. PRs welcome.
 Tested against KDE Plasma 6.4+ on Wayland.

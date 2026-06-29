@@ -1,5 +1,5 @@
 /**
- * CachyFlow - main.js  (v0.2)
+ * PlasmaFlow - main.js  (v0.2)
  * Entry point. Wires KWin workspace signals to the tiling engine.
  *
  * KWin scripting runs in a JS engine inside KWin itself.
@@ -91,7 +91,7 @@ const scratchWindows = [];
 //
 // The one path that works: callDBus into the always-running plasmashell, whose
 // scripting engine *does* expose a `ConfigFile` object that writes KConfig. We
-// write into kwinrc's [Script-cachy-flow] group — the same group our own
+// write into kwinrc's [Script-plasma-flow] group — the same group our own
 // readConfig() reads — so restore is just a synchronous readConfig() at load,
 // with no async round-trip. plasmashell flushes the write to disk immediately,
 // and KWin re-reads kwinrc on the next script load (KConfig notices the mtime
@@ -124,12 +124,12 @@ function plasmaEval(script) {
 // no-op if plasmashell is down, since the OSD is purely informational.
 //
 // The icon is an icon-*theme name*, not a file path: showText hands it to a
-// Plasma IconItem that resolves it via the icon theme. We ship icons/cachy-flow.png
-// into hicolor (the Makefile installs it) so "cachy-flow" resolves to our logo.
+// Plasma IconItem that resolves it via the icon theme. We ship icons/plasma-flow.png
+// into hicolor (the Makefile installs it) so "plasma-flow" resolves to our logo.
 function showOsd(text) {
     if (typeof callDBus !== "function") return;
     callDBus("org.kde.plasmashell", "/org/kde/osdService",
-             "org.kde.osdService", "showText", "cachy-flow", text);
+             "org.kde.osdService", "showText", "plasma-flow", text);
 }
 
 /**
@@ -145,7 +145,7 @@ function persistState(key, state) {
     // known layout name, a rounded number) — no quotes/backslashes/newlines can
     // appear, so embedding them directly in the snippet is safe.
     plasmaEval(
-        'var c = new ConfigFile("kwinrc", "Script-cachy-flow");' +
+        'var c = new ConfigFile("kwinrc", "Script-plasma-flow");' +
         'c.writeEntry("persist:' + key + '", "' + value + '");'
     );
 }
@@ -555,7 +555,7 @@ function cycleLayout(window) {
     // Mark as session-overridden if it differs from pinned layout
     const overridden = state.pinnedLayout && state.layout !== state.pinnedLayout
         ? ` (pinned: ${state.pinnedLayout})` : "";
-    showOsd(`CachyFlow: ${state.layout}${overridden}`);
+    showOsd(`PlasmaFlow: ${state.layout}${overridden}`);
 }
 
 function swapWithMaster(window) {
@@ -645,7 +645,7 @@ function sendToAdjacentDesktop(window, dir) {
 
     const target = desktops[targetIdx];
     window.desktops = [target];
-    showOsd("CachyFlow: → " + target.name);
+    showOsd("PlasmaFlow: → " + target.name);
 }
 
 // ─── Scratchpad ──────────────────────────────────────────────────────────────
@@ -685,7 +685,7 @@ function sendToScratchpad(window) {
     scratchWindows.push(window);
     window.minimized = true;                              // hide it
     const n = scratchWindows.length;
-    showOsd("CachyFlow: scratchpad (" + n + " window" + (n === 1 ? "" : "s") + ")");
+    showOsd("PlasmaFlow: scratchpad (" + n + " window" + (n === 1 ? "" : "s") + ")");
 }
 
 // Show every scratchpad window on `desktop`, cascaded, and focus the top one.
@@ -703,7 +703,7 @@ function showScratchpad(desktop) {
 // otherwise summon every parked window to the current desktop. This makes
 // Meta+Grave from another desktop pull the scratchpad to you rather than hide it.
 function toggleScratchpad() {
-    if (scratchWindows.length === 0) { showOsd("CachyFlow: scratchpad is empty"); return; }
+    if (scratchWindows.length === 0) { showOsd("PlasmaFlow: scratchpad is empty"); return; }
 
     const cur = workspace.currentDesktop;
     const shownHere = scratchWindows.some(w => !w.minimized && windowOnDesktop(w, cur));
@@ -775,7 +775,7 @@ function adjustMasterRatio(window, state, delta) {
     // useful range is ~0.1–0.9, so ratio*10 maps naturally onto the 10-block bar.
     const pct     = Math.round(state.masterRatio * 100);
     const filled  = Math.round(state.masterRatio * 10);
-    showOsd(`CachyFlow  ${ratioBar(filled)}  ${pct}%`);
+    showOsd(`PlasmaFlow  ${ratioBar(filled)}  ${pct}%`);
 }
 
 function adjustCornerRatio(window, state, delta) {
@@ -795,49 +795,49 @@ function adjustCornerRatio(window, state, delta) {
     // (corner ratio never exceeds 0.5, which would only ever half-fill a raw bar).
     const pct     = Math.round(state.cornerRatio * 100);
     const filled  = Math.round((state.cornerRatio - MIN) / (MAX - MIN) * 10);
-    showOsd(`CachyFlow  corners ${ratioBar(filled)}  ${pct}%`);
+    showOsd(`PlasmaFlow  corners ${ratioBar(filled)}  ${pct}%`);
 }
 
 // ─── Register shortcuts ─────────────────────────────────────────────────────
 
 registerShortcut(
-    "CachyFlow: Cycle Layout",
-    "CachyFlow: Cycle Layout",
+    "PlasmaFlow: Cycle Layout",
+    "PlasmaFlow: Cycle Layout",
     "Meta+T",
     () => { if (workspace.activeWindow) cycleLayout(workspace.activeWindow); }
 );
 
 registerShortcut(
-    "CachyFlow: Swap with Master",
-    "CachyFlow: Swap with Master",
+    "PlasmaFlow: Swap with Master",
+    "PlasmaFlow: Swap with Master",
     "Meta+Return",
     () => { if (workspace.activeWindow) swapWithMaster(workspace.activeWindow); }
 );
 
 registerShortcut(
-    "CachyFlow: Focus Next",
-    "CachyFlow: Focus Next",
+    "PlasmaFlow: Focus Next",
+    "PlasmaFlow: Focus Next",
     "Meta+J",
     () => { if (workspace.activeWindow) focusNext(workspace.activeWindow); }
 );
 
 registerShortcut(
-    "CachyFlow: Focus Prev",
-    "CachyFlow: Focus Prev",
+    "PlasmaFlow: Focus Prev",
+    "PlasmaFlow: Focus Prev",
     "Meta+K",
     () => { if (workspace.activeWindow) focusPrev(workspace.activeWindow); }
 );
 
 registerShortcut(
-    "CachyFlow: Move Window Down",
-    "CachyFlow: Move Window Down",
+    "PlasmaFlow: Move Window Down",
+    "PlasmaFlow: Move Window Down",
     "Meta+Shift+J",
     () => { if (workspace.activeWindow) moveNext(workspace.activeWindow); }
 );
 
 registerShortcut(
-    "CachyFlow: Move Window Up",
-    "CachyFlow: Move Window Up",
+    "PlasmaFlow: Move Window Up",
+    "PlasmaFlow: Move Window Up",
     "Meta+Shift+K",
     () => { if (workspace.activeWindow) movePrev(workspace.activeWindow); }
 );
@@ -849,15 +849,15 @@ registerShortcut(
 // KDE's *default* for Quick Tile Left/Right — tiling-script users typically
 // clear that (documented in the README).
 registerShortcut(
-    "CachyFlow: Send to Previous Desktop",
-    "CachyFlow: Send to Previous Desktop",
+    "PlasmaFlow: Send to Previous Desktop",
+    "PlasmaFlow: Send to Previous Desktop",
     "Meta+Left",
     () => { if (workspace.activeWindow) sendToAdjacentDesktop(workspace.activeWindow, -1); }
 );
 
 registerShortcut(
-    "CachyFlow: Send to Next Desktop",
-    "CachyFlow: Send to Next Desktop",
+    "PlasmaFlow: Send to Next Desktop",
+    "PlasmaFlow: Send to Next Desktop",
     "Meta+Right",
     () => { if (workspace.activeWindow) sendToAdjacentDesktop(workspace.activeWindow, 1); }
 );
@@ -867,29 +867,29 @@ registerShortcut(
 // working). Send uses Meta+Ctrl+Grave, NOT Meta+Shift+Grave: Shift+Grave emits
 // the tilde keysym, which (like the shifted number row) never matches.
 registerShortcut(
-    "CachyFlow: Toggle Scratchpad",
-    "CachyFlow: Toggle Scratchpad",
+    "PlasmaFlow: Toggle Scratchpad",
+    "PlasmaFlow: Toggle Scratchpad",
     "Meta+`",
     () => { toggleScratchpad(); }
 );
 
 registerShortcut(
-    "CachyFlow: Send to Scratchpad",
-    "CachyFlow: Send to Scratchpad",
+    "PlasmaFlow: Send to Scratchpad",
+    "PlasmaFlow: Send to Scratchpad",
     "Meta+Ctrl+`",
     () => { if (workspace.activeWindow) sendToScratchpad(workspace.activeWindow); }
 );
 
 registerShortcut(
-    "CachyFlow: Toggle Float",
-    "CachyFlow: Toggle Float",
+    "PlasmaFlow: Toggle Float",
+    "PlasmaFlow: Toggle Float",
     "Meta+F",
     () => { if (workspace.activeWindow) toggleFloat(workspace.activeWindow); }
 );
 
 registerShortcut(
-    "CachyFlow: Increase Master Width",
-    "CachyFlow: Increase Master Width",
+    "PlasmaFlow: Increase Master Width",
+    "PlasmaFlow: Increase Master Width",
     "Meta+L",
     () => {
         if (workspace.activeWindow)
@@ -898,8 +898,8 @@ registerShortcut(
 );
 
 registerShortcut(
-    "CachyFlow: Decrease Master Width",
-    "CachyFlow: Decrease Master Width",
+    "PlasmaFlow: Decrease Master Width",
+    "PlasmaFlow: Decrease Master Width",
     "Meta+H",
     () => {
         if (workspace.activeWindow)
@@ -965,4 +965,4 @@ for (const window of existingWindows) {
     onWindowAdded(window);
 }
 
-print("[CachyFlow] Loaded. Default layout: " + CONFIG.defaultLayout);
+print("[PlasmaFlow] Loaded. Default layout: " + CONFIG.defaultLayout);
