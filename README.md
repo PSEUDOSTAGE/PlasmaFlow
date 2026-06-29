@@ -51,7 +51,9 @@ make package
 | Meta + Shift + K | Move focused window up in tile order   |
 | Meta + Left    | Send focused window to previous desktop |
 | Meta + Right   | Send focused window to next desktop     |
-| Meta + F       | Toggle float for focused window |
+| Meta + Ctrl + `` ` `` | Park focused window in the scratchpad |
+| Meta + `` ` ``  | Summon / dismiss the scratchpad |
+| Meta + F       | Toggle float (also ejects a summoned scratchpad window into tiling) |
 | Meta + L       | Increase master width (master-stack) |
 | Meta + H       | Decrease master width (master-stack) |
 
@@ -63,6 +65,9 @@ Shortcuts can be rebound in **System Settings → Shortcuts → KWin Scripts**.
 
 > **⚠️ Meta+Left / Meta+Right are KDE's default "Quick Tile Left/Right".**
 > Send-to-desktop uses these. If you still have KDE's quick-tiling on those keys, clear it: **System Settings → Keyboard → Shortcuts**, search **`Quick Tile`**, and clear the **Meta+Left/Right** chips. (Most tiling-script users have already disabled KDE quick-tiling.) *Why arrows and not Meta+Shift+1–9? KWin can't fire script shortcuts on the shifted number row under Wayland, and plain Meta+1–9 is taken by the task manager.*
+
+> **⚠️ Meta+`` ` `` is KDE's *alternative* binding for "Walk Through Windows of Current Application".**
+> The scratchpad toggle uses it. The primary binding (`Alt+`` ` ``) is unaffected; just clear the **Meta+`` ` ``** chip from that action in **System Settings → Keyboard → Shortcuts** if the toggle cycles app windows instead of summoning the scratchpad.
 
 ---
 
@@ -79,6 +84,18 @@ All windows fullscreen, stacked. Cycle focus with Meta+J/K.
 
 ### spotlight
 Master fills the entire screen. Stack windows sit in the corners, clockwise from bottom-right: BR → TR → TL → BL. More than 4 stack windows overflow into a second layer, scaled down by 70%, sitting behind the first. Corner size is configurable (default 28% of screen dimensions).
+
+---
+
+## Scratchpad
+
+A hidden layer for windows you want out of the way but a keystroke away. It holds **any number** of windows.
+
+- **Park** a window: focus it and press **Meta + Ctrl + `` ` ``**. It leaves the layout (the rest reflow) and hides.
+- **Summon / dismiss**: **Meta + `` ` ``** brings every parked window to your current desktop (floating, cascaded); press again to hide them.
+- **Send back to tiling**: summon the scratchpad, focus a window, and press **Meta + F** — it drops into the current desktop's layout and leaves the scratchpad.
+
+**Tip — move a window to any desktop, even non-adjacent ones:** park it, switch to whatever desktop you want (no matter how far), summon with **Meta + `` ` ``**, then **Meta + F** to tile it there. Meta+Left/Right only move to *neighbouring* desktops, so the scratchpad is the quickest way to send a window somewhere far.
 
 ---
 
@@ -111,7 +128,7 @@ cachy-tile/
 - [x] Send window to previous/next desktop (Meta+Left / Meta+Right) (v0.3)
 - [ ] Session persistence — layout + ratio per desktop *(not yet working: the target KWin build has no script write-config API)*
 - [ ] Spiral / Fibonacci layout
-- [ ] Scratchpad (hidden floating layer)
+- [x] Scratchpad (multi-window hidden floating layer; doubles as send-to-any-desktop) (v0.3)
 - [ ] Multi-monitor awareness (independent layout per screen)
 - [ ] Plasma widget for layout indicator in taskbar
 

@@ -74,6 +74,10 @@ const CONFIG = loadConfig();
  */
 const layoutState = {};
 
+// Windows parked in the scratchpad. They live outside the tile layout entirely
+// (never tiled) and are summoned/dismissed together with Meta+Grave.
+const scratchWindows = [];
+
 // ─── Session persistence ────────────────────────────────────────────────────
 
 /**
@@ -154,6 +158,7 @@ function getState(window) {
 // ─── Float detection ────────────────────────────────────────────────────────
 
 function shouldFloat(window) {
+    if (scratchWindows.indexOf(window) !== -1)             return true;
     if (window.dialog || window.utility || window.splash) return true;
     if (window.fullScreen)                                 return true;
     if (!window.resizeable)                                return true;
@@ -507,6 +512,72 @@ function sendToAdjacentDesktop(window, dir) {
     osd.show("CachyTile: → " + target.name);
 }
 
+// ─── Scratchpad ──────────────────────────────────────────────────────────────
+// Any number of windows can be parked in the scratchpad. They live outside the
+// tiling layout (shouldFloat keeps them un-tiled) and are summoned/dismissed
+// together with Meta+Grave: "hidden" = minimized; "shown" = un-minimized, pulled
+// to the current desktop, cascaded, and focused.
+
+function windowOnDesktop(window, desktop) {
+    if (!desktop) return true;
+    const ds = window.desktops;
+    if (!ds || ds.length === 0) return true;   // empty = on all desktops
+    for (let i = 0; i < ds.length; i++) if (ds[i].id === desktop.id) return true;
+    return false;
+}
+
+// Position one scratchpad window: 60% of the usable area, cascaded by `index`
+// so multiple windows don't perfectly overlap, kept centred as a group.
+function cascadeFloating(window, index, count) {
+    const area = workspace.clientArea(KWin.PlacementArea, window);
+    const w = Math.floor(area.width * 0.6);
+    const h = Math.floor(area.height * 0.6);
+    const step = 40;
+    const baseX = area.x + Math.floor((area.width - w) / 2) - Math.floor(step * (count - 1) / 2);
+    const baseY = area.y + Math.floor((area.height - h) / 2) - Math.floor(step * (count - 1) / 2);
+    const x = Math.max(area.x, Math.min(baseX + index * step, area.x + area.width - w));
+    const y = Math.max(area.y, Math.min(baseY + index * step, area.y + area.height - h));
+    window.frameGeometry = rect(x, y, w, h);
+}
+
+// Park the focused window in the scratchpad and hide it. Pulling it out of the
+// tile list via removeWindow() reflows the rest of its desktop.
+function sendToScratchpad(window) {
+    if (!window) return;
+    if (scratchWindows.indexOf(window) !== -1) return;   // already parked
+    removeWindow(window);                                 // untile + reflow source
+    scratchWindows.push(window);
+    window.minimized = true;                              // hide it
+    const n = scratchWindows.length;
+    osd.show("CachyTile: scratchpad (" + n + " window" + (n === 1 ? "" : "s") + ")");
+}
+
+// Show every scratchpad window on `desktop`, cascaded, and focus the top one.
+function showScratchpad(desktop) {
+    for (let i = 0; i < scratchWindows.length; i++) {
+        const w = scratchWindows[i];
+        if (desktop) w.desktops = [desktop];
+        w.minimized = false;
+        cascadeFloating(w, i, scratchWindows.length);
+    }
+    workspace.activeWindow = scratchWindows[scratchWindows.length - 1];
+}
+
+// Toggle: if the scratchpad is already showing on the current desktop, hide it;
+// otherwise summon every parked window to the current desktop. This makes
+// Meta+Grave from another desktop pull the scratchpad to you rather than hide it.
+function toggleScratchpad() {
+    if (scratchWindows.length === 0) { osd.show("CachyTile: scratchpad is empty"); return; }
+
+    const cur = workspace.currentDesktop;
+    const shownHere = scratchWindows.some(w => !w.minimized && windowOnDesktop(w, cur));
+    if (shownHere) {
+        for (const w of scratchWindows) w.minimized = true;
+    } else {
+        showScratchpad(cur);
+    }
+}
+
 function toggleFloat(window) {
     const state = getState(window);
     if (!state) return;
@@ -517,7 +588,11 @@ function toggleFloat(window) {
         state.windows.splice(idx, 1);
         if (state.windows.length > 0) tile(state.windows[0]);
     } else {
-        // Currently floating → add to tile list
+        // Currently floating → add to tile list. If it's a parked scratchpad
+        // window, eject it from the scratchpad first so it tiles (this is how a
+        // summoned scratchpad window is sent back to the desktop).
+        const si = scratchWindows.indexOf(window);
+        if (si !== -1) scratchWindows.splice(si, 1);
         addWindow(window);
     }
 }
@@ -614,6 +689,24 @@ registerShortcut(
     () => { if (workspace.activeWindow) sendToAdjacentDesktop(workspace.activeWindow, 1); }
 );
 
+// Scratchpad. Meta+Grave toggles it (collides with KWin's "Walk Through Windows
+// of Current Application" alt-binding — documented in README; Alt+Grave keeps
+// working). Send uses Meta+Ctrl+Grave, NOT Meta+Shift+Grave: Shift+Grave emits
+// the tilde keysym, which (like the shifted number row) never matches.
+registerShortcut(
+    "CachyTile: Toggle Scratchpad",
+    "CachyTile: Toggle Scratchpad",
+    "Meta+`",
+    () => { toggleScratchpad(); }
+);
+
+registerShortcut(
+    "CachyTile: Send to Scratchpad",
+    "CachyTile: Send to Scratchpad",
+    "Meta+Ctrl+`",
+    () => { if (workspace.activeWindow) sendToScratchpad(workspace.activeWindow); }
+);
+
 registerShortcut(
     "CachyTile: Toggle Float",
     "CachyTile: Toggle Float",
@@ -675,7 +768,11 @@ function onWindowAdded(window) {
 }
 
 workspace.windowAdded.connect(onWindowAdded);
-workspace.windowRemoved.connect(removeWindow);
+workspace.windowRemoved.connect((window) => {
+    const si = scratchWindows.indexOf(window);
+    if (si !== -1) scratchWindows.splice(si, 1);          // parked window closed
+    removeWindow(window);
+});
 
 // Screen geometry changes. The exact signal name has varied across KWin
 // versions, so guard it — a missing signal must not abort script load.
