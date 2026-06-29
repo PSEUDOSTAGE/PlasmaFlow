@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" version="1.1" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#008066"/>
+      <stop offset="35%" stop-color="#00aa88"/>
+      <stop offset="70%" stop-color="#00ccff"/>
+      <stop offset="100%" stop-color="#00ffcc"/>
+    </linearGradient>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0a1a18"/>
+      <stop offset="100%" stop-color="#050d0c"/>
+    </linearGradient>
+    <linearGradient id="wave" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#008066"/>
+      <stop offset="100%" stop-color="#00ffcc"/>
+    </linearGradient>
+    <clipPath id="clip">
+      <rect x="8" y="8" width="240" height="240" rx="48" ry="48"/>
+    </clipPath>
+  </defs>
+
+  <!-- Dark rounded square background -->
+  <rect x="8" y="8" width="240" height="240" rx="48" ry="48" fill="url(#bg)"/>
+
+  <!-- Flow wave at bottom -->
+  <g clip-path="url(#clip)" opacity="0.5">
+    <path d="M -10 185 Q 60 165 128 185 T 270 170 L 270 260 L -10 260 Z" fill="url(#wave)" opacity="0.4"/>
+    <path d="M -10 205 Q 70 185 140 208 T 270 195 L 270 260 L -10 260 Z" fill="url(#wave)" opacity="0.25"/>
+  </g>
+
+  <!-- Tiling windows rotated 90° clockwise (positions computed by hand) -->
+  <!-- W1 (was master left tall): now top, wide 104x86 -->
+  <!-- W2 (was stack top-right): now right, tall 48x86 -->
+  <!-- W3 (was stack bottom-right): now center, tall 48x86 -->
+  <!-- W4 (was full bottom): now left, full-height 56x184 -->
+
+  <!-- Tile fills (subtle glow) -->
+  <g opacity="0.18">
+    <rect x="110" y="34"  width="104" height="86"  rx="10" fill="url(#grad)"/>
+    <rect x="166" y="132" width="48"  height="86"  rx="10" fill="url(#grad)"/>
+    <rect x="110" y="132" width="48"  height="86"  rx="10" fill="url(#grad)"/>
+    <rect x="42"  y="34"  width="56"  height="184" rx="10" fill="url(#grad)"/>
+  </g>
+
+  <!-- Tile outlines -->
+  <g fill="none" stroke="url(#grad)" stroke-width="4">
+    <rect x="110" y="34"  width="104" height="86"  rx="10"/>
+    <rect x="166" y="132" width="48"  height="86"  rx="10"/>
+    <rect x="110" y="132" width="48"  height="86"  rx="10"/>
+    <rect x="42"  y="34"  width="56"  height="184" rx="10"/>
+  </g>
+
+  <!-- Title bars at top of each rotated window -->
+  <!-- W1 top title bar -->
+  <path d="M 120 34 L 204 34 A 10 10 0 0 1 214 44 L 214 46 L 110 46 L 110 44 A 10 10 0 0 1 120 34 Z" fill="url(#grad)"/>
+  <!-- W2 top title bar -->
+  <path d="M 176 132 L 204 132 A 10 10 0 0 1 214 142 L 214 144 L 166 144 L 166 142 A 10 10 0 0 1 176 132 Z" fill="url(#grad)" opacity="0.8"/>
+  <!-- W3 top title bar -->
+  <path d="M 120 132 L 148 132 A 10 10 0 0 1 158 142 L 158 144 L 110 144 L 110 142 A 10 10 0 0 1 120 132 Z" fill="url(#grad)" opacity="0.6"/>
+  <!-- W4 top title bar -->
+  <path d="M 52 34 L 88 34 A 10 10 0 0 1 98 44 L 98 46 L 42 46 L 42 44 A 10 10 0 0 1 52 34 Z" fill="url(#grad)" opacity="0.7"/>
+
+  <!-- Flow wave/stroke across bottom -->
+  <g clip-path="url(#clip)">
+    <path d="M 16 232 Q 64 212 128 232 T 248 224" fill="none" stroke="url(#wave)" stroke-width="5" stroke-linecap="round"/>
+    <path d="M 16 246 Q 72 226 140 248 T 248 242" fill="none" stroke="#00ffcc" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+  </g>
+
+  <!-- Subtle inner ring -->
+  <rect x="12" y="12" width="232" height="232" rx="44" ry="44" fill="none" stroke="#00ffcc" stroke-width="1" opacity="0.1"/>
+</svg>

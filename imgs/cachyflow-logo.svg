@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="500" height="100" version="1.1" viewBox="0 0 500 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="flowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00aa88"/>
+      <stop offset="50%" stop-color="#00ccff"/>
+      <stop offset="100%" stop-color="#00ffcc"/>
+    </linearGradient>
+  </defs>
+
+  <!-- "Cachy" in light mint white -->
+  <text x="10" y="72"
+        font-family="'SF Pro Display', 'Inter', 'Segoe UI', 'Helvetica Neue', sans-serif"
+        font-size="72" font-weight="800" fill="#e0fff5" letter-spacing="-2">Cachy</text>
+
+  <!-- "Flow" in gradient, tight spacing -->
+  <text x="230" y="72"
+        font-family="'SF Pro Display', 'Inter', 'Segoe UI', 'Helvetica Neue', sans-serif"
+        font-size="72" font-weight="800" fill="url(#flowGrad)" letter-spacing="-2">Flow</text>
+</svg>

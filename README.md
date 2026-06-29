@@ -1,8 +1,11 @@
-# CachyTile
+<p align="center">
+  <img src="imgs/cachyflow-text-banner.svg" alt="CachyFlow" width="640">
+</p>
 
-A Wayland-first dynamic tiling KWin script for KDE Plasma 6, built for CachyOS.
-
-Fills the gap left by Bismuth (archived) with a clean, modern, Plasma 6-native codebase.
+<p align="center">
+  A Wayland-first dynamic tiling KWin script for KDE Plasma 6, built for CachyOS.<br>
+  Fills the gap left by Bismuth (archived) with a clean, modern, Plasma 6-native codebase.
+</p>
 
 ---
 
@@ -24,18 +27,18 @@ Fills the gap left by Bismuth (archived) with a clean, modern, Plasma 6-native c
 
 ### From source
 ```bash
-git clone THE-PROJECT-URL
-cd cachy-tile
+git clone https://github.com/PSEUDOSTAGE/CachyFlow.git
+cd CachyFlow
 make install
 make reload
 ```
 
-Then enable in **System Settings → Window Management → KWin Scripts → CachyTile**.
+Then enable in **System Settings → Window Management → KWin Scripts → CachyFlow**.
 
 ### As .kwinscript (KDE Store / manual)
 ```bash
 make package
-# Import cachy-tile.kwinscript via System Settings → KWin Scripts → Import
+# Import cachy-flow.kwinscript via System Settings → KWin Scripts → Import
 ```
 
 ---
@@ -61,7 +64,7 @@ make package
 Shortcuts can be rebound in **System Settings → Shortcuts → KWin Scripts**.
 
 > **⚠️ Meta+T conflicts with KDE's built-in "Toggle Tiles Editor".**
-> KWin ships with **Meta+T** bound to its tile-editor overlay, so out of the box it will fire instead of (or alongside) CachyTile's *Cycle layout*. To free it up:
+> KWin ships with **Meta+T** bound to its tile-editor overlay, so out of the box it will fire instead of (or alongside) CachyFlow's *Cycle layout*. To free it up:
 > **System Settings → Keyboard → Shortcuts**, search **`Toggle Tiles Editor`**, click its **Meta+T** chip and clear it, then **Apply**.
 
 > **⚠️ Meta+Left / Meta+Right are KDE's default "Quick Tile Left/Right".**
@@ -71,7 +74,7 @@ Shortcuts can be rebound in **System Settings → Shortcuts → KWin Scripts**.
 > The scratchpad toggle uses it. The primary binding (`Alt+`` ` ``) is unaffected; just clear the **Meta+`` ` ``** chip from that action in **System Settings → Keyboard → Shortcuts** if the toggle cycles app windows instead of summoning the scratchpad.
 
 > **⚠️ Meta+L is KDE's default "Lock Screen" shortcut.**
-> CachyTile uses it to *grow the master width* (master-stack / spiral) or *corner size* (spotlight), so out of the box pressing it will lock the screen instead. To free it up: **System Settings → Keyboard → Shortcuts**, search **`Lock Screen`** (the *Screen Locking* action), click its **Meta+L** chip and clear it, then **Apply** — re-bind locking to another key first if you still want a lock shortcut.
+> CachyFlow uses it to *grow the master width* (master-stack / spiral) or *corner size* (spotlight), so out of the box pressing it will lock the screen instead. To free it up: **System Settings → Keyboard → Shortcuts**, search **`Lock Screen`** (the *Screen Locking* action), click its **Meta+L** chip and clear it, then **Apply** — re-bind locking to another key first if you still want a lock shortcut.
 
 ---
 
@@ -109,7 +112,7 @@ A hidden layer for windows you want out of the way but a keystroke away. It hold
 ## Project Structure
 
 ```
-cachy-tile/
+CachyFlow/
 ├── contents/
 │   ├── code/
 │   │   └── main.js       ← Tiling engine + KWin signal wiring

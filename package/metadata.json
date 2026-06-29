@@ -7,10 +7,10 @@
             }
         ],
         "Description": "A Wayland-first dynamic tiling script for KDE Plasma 6, built for CachyOS. Supports master/stack, columns, and floating layouts with per-app rules and gap control.",
-        "Icon": "window-duplicate",
-        "Id": "cachy-tile",
+        "Icon": "cachy-flow",
+        "Id": "cachy-flow",
         "License": "GPL-3.0",
-        "Name": "CachyTile",
+        "Name": "CachyFlow",
         "Version": "0.2.0"
     },
     "X-KDE-ConfigModule": "kwin/effects/configs/kcm_kwin4_genericscripted",

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1280" height="400" version="1.1" viewBox="0 0 1280 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#008066"/>
+      <stop offset="35%" stop-color="#00aa88"/>
+      <stop offset="70%" stop-color="#00ccff"/>
+      <stop offset="100%" stop-color="#00ffcc"/>
+    </linearGradient>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#102824"/>
+      <stop offset="50%" stop-color="#0c1c18"/>
+      <stop offset="100%" stop-color="#102824"/>
+    </linearGradient>
+    <linearGradient id="wave" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#008066" stop-opacity="0"/>
+      <stop offset="15%" stop-color="#008066"/>
+      <stop offset="40%" stop-color="#00aa88"/>
+      <stop offset="60%" stop-color="#00ccff"/>
+      <stop offset="85%" stop-color="#00ffcc"/>
+      <stop offset="100%" stop-color="#00ffcc" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="textFlow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00aa88"/>
+      <stop offset="50%" stop-color="#00ccff"/>
+      <stop offset="100%" stop-color="#00ffcc"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect x="0" y="0" width="1280" height="400" fill="url(#bg)"/>
+
+  <!-- Icon: 200x200, centered vertically at y=200 -->
+  <!-- Shifted left 125px to center the whole group -->
+  <g transform="translate(415, 200) translate(-100, -100) scale(0.78125)">
+    <!-- Tile fills -->
+    <g opacity="0.15">
+      <rect x="110" y="34"  width="104" height="86"  rx="10" fill="url(#grad)"/>
+      <rect x="166" y="132" width="48"  height="86"  rx="10" fill="url(#grad)"/>
+      <rect x="110" y="132" width="48"  height="86"  rx="10" fill="url(#grad)"/>
+      <rect x="42"  y="34"  width="56"  height="184" rx="10" fill="url(#grad)"/>
+    </g>
+    <!-- Tile outlines -->
+    <g fill="none" stroke="url(#grad)" stroke-width="4">
+      <rect x="110" y="34"  width="104" height="86"  rx="10"/>
+      <rect x="166" y="132" width="48"  height="86"  rx="10"/>
+      <rect x="110" y="132" width="48"  height="86"  rx="10"/>
+      <rect x="42"  y="34"  width="56"  height="184" rx="10"/>
+    </g>
+    <!-- Title bars -->
+    <path d="M 120 34 L 204 34 A 10 10 0 0 1 214 44 L 214 46 L 110 46 L 110 44 A 10 10 0 0 1 120 34 Z" fill="url(#grad)"/>
+    <path d="M 176 132 L 204 132 A 10 10 0 0 1 214 142 L 214 144 L 166 144 L 166 142 A 10 10 0 0 1 176 132 Z" fill="url(#grad)" opacity="0.8"/>
+    <path d="M 120 132 L 148 132 A 10 10 0 0 1 158 142 L 158 144 L 110 144 L 110 142 A 10 10 0 0 1 120 132 Z" fill="url(#grad)" opacity="0.6"/>
+    <path d="M 52 34 L 88 34 A 10 10 0 0 1 98 44 L 98 46 L 42 46 L 42 44 A 10 10 0 0 1 52 34 Z" fill="url(#grad)" opacity="0.7"/>
+  </g>
+
+  <!-- Text: "CachyFlow" close to icon, vertically centered -->
+  <!-- Icon right edge ~640, text starts at 660, font 80px -->
+  <text x="515" y="228"
+        font-family="'SF Pro Display', 'Inter', 'Segoe UI', 'Helvetica Neue', sans-serif"
+        font-size="80" font-weight="800" fill="#e0fff5" letter-spacing="-2">Cachy</text>
+  <text x="755" y="228"
+        font-family="'SF Pro Display', 'Inter', 'Segoe UI', 'Helvetica Neue', sans-serif"
+        font-size="80" font-weight="800" fill="url(#textFlow)" letter-spacing="-2">Flow</text>
+
+  <!-- Flow waves: filled area waves + stroke waves, matching the icon style -->
+  <path d="M -50 295 Q 200 275 450 295 T 900 290 T 1330 285 L 1330 400 L -50 400 Z"
+        fill="url(#wave)" opacity="0.12"/>
+  <path d="M -50 325 Q 250 305 500 327 T 950 320 T 1330 315 L 1330 400 L -50 400 Z"
+        fill="url(#wave)" opacity="0.08"/>
+  <path d="M 0 350 Q 200 330 420 350 T 860 343 T 1280 337"
+        fill="none" stroke="url(#wave)" stroke-width="5" stroke-linecap="round"/>
+  <path d="M 0 370 Q 220 350 440 370 T 880 363 T 1280 360"
+        fill="none" stroke="#00ffcc" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- Subtle borders -->
+  <rect x="0" y="0" width="1280" height="1" fill="url(#wave)" opacity="0.2"/>
+  <rect x="0" y="399" width="1280" height="1" fill="url(#wave)" opacity="0.15"/>
+</svg>
