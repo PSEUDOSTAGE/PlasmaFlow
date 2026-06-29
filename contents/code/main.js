@@ -497,19 +497,15 @@ function tile(window) {
 function applyStacking(state, visible) {
     const master = (state.layout === "spotlight" && visible.length > 1)
         ? visible[0] : null;
+    // Only write keepBelow when it actually changes. In every non-spotlight
+    // layout this would otherwise re-set `false` on every window on every
+    // retile (minimize, ratio adjust, swap, move, add/remove); a redundant
+    // property write can emit change signals / trigger compositor restacking,
+    // so skipping no-ops is pure win. keepBelow is a bool we fully control.
     for (let i = 0; i < state.windows.length; i++) {
-        state.windows[i].keepBelow = (state.windows[i] === master);
+        const want = (state.windows[i] === master);
+        if (state.windows[i].keepBelow !== want) state.windows[i].keepBelow = want;
     }
-}
-
-function retileScreen(screenIndex, desktop) {
-    const key   = stateKey(screenIndex, desktop.id);
-    const state = layoutState[key];
-    if (!state || state.windows.length === 0) return;
-
-    // Use first window as a proxy to get the area
-    const proxy = state.windows[0];
-    tile(proxy);
 }
 
 // ─── Window lifecycle ────────────────────────────────────────────────────────
