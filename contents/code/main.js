@@ -11,7 +11,7 @@
 // ─── Config ────────────────────────────────────────────────────────────────
 
 // Known layout names, in the same order as the config combo box / Enum choices.
-const LAYOUT_NAMES = ["master-stack", "columns", "monocle", "spotlight"];
+const LAYOUT_NAMES = ["master-stack", "columns", "monocle", "spotlight", "spiral"];
 
 // Tolerate a defaultLayout that comes back as a numeric index (e.g. "0" from an
 // older combo-box binding) by mapping it to the layout name; pass names through.
@@ -38,7 +38,7 @@ function loadConfig() {
     return {
         gap:                  readConfig("gap", 8),
         outerGap:             readConfig("outerGap", 8),
-        defaultLayout:        normalizeLayoutName(readConfig("defaultLayout", "master-stack")),
+        defaultLayout:        normalizeLayoutName(readConfig("defaultLayout", "spiral")),
         defaultMasterRatio:   readConfig("defaultMasterRatio", 0.5),
         masterRatioStep:      readConfig("masterRatioStep", 0.05),
         spotlightCornerRatio: readConfig("spotlightCornerRatio", 0.28),
@@ -337,6 +337,55 @@ const layouts = {
         }
     },
 
+    /**
+     * spiral (Fibonacci): recursively split the usable area, alternating
+     * vertical and horizontal cuts and spiralling clockwise inward — left, top,
+     * right, bottom, left, … The first cut (the master split) uses `masterRatio`
+     * so Meta+H/L grows/shrinks the master area; every subsequent cut is an even
+     * 50/50 so the remaining windows stay balanced and the final window fills
+     * what's left. (Using masterRatio for *every* cut made the innermost window
+     * balloon as the ratio shrank — unintuitive, so we don't.)
+     */
+    "spiral": function(windows, area, cfg) {
+        if (windows.length === 0) return;
+
+        const g  = cfg.gap;
+        const og = cfg.outerGap;
+
+        let x = area.x + og;
+        let y = area.y + og;
+        let w = area.width  - og * 2;
+        let h = area.height - og * 2;
+
+        for (let i = 0; i < windows.length; i++) {
+            if (i === windows.length - 1) {       // last window fills the rest
+                windows[i].frameGeometry = rect(x, y, w, h);
+                break;
+            }
+
+            // Only the master split follows masterRatio; the rest split evenly.
+            const ratio = (i === 0) ? cfg.masterRatio : 0.5;
+            const dir = i % 4;
+            if (dir === 0) {                      // cut vertical, window left
+                const cut = Math.max(0, Math.floor((w - g) * ratio));
+                windows[i].frameGeometry = rect(x, y, cut, h);
+                x += cut + g; w -= cut + g;
+            } else if (dir === 1) {               // cut horizontal, window top
+                const cut = Math.max(0, Math.floor((h - g) * ratio));
+                windows[i].frameGeometry = rect(x, y, w, cut);
+                y += cut + g; h -= cut + g;
+            } else if (dir === 2) {               // cut vertical, window right
+                const cut = Math.max(0, Math.floor((w - g) * ratio));
+                windows[i].frameGeometry = rect(x + (w - cut), y, cut, h);
+                w -= cut + g;
+            } else {                              // cut horizontal, window bottom
+                const cut = Math.max(0, Math.floor((h - g) * ratio));
+                windows[i].frameGeometry = rect(x, y + (h - cut), w, cut);
+                h -= cut + g;
+            }
+        }
+    },
+
 };
 
 // ─── Tile trigger ───────────────────────────────────────────────────────────
@@ -601,8 +650,9 @@ function adjustMasterRatio(window, delta) {
     const state = getState(window);
     if (!state) return;
 
-    // Only meaningful for master-stack; silently no-op for other layouts
-    if (state.layout !== "master-stack") return;
+    // masterRatio drives the split fraction in master-stack and spiral; it's
+    // meaningless for the other layouts, so silently no-op there.
+    if (state.layout !== "master-stack" && state.layout !== "spiral") return;
     if (state.windows.length < 2)        return;
 
     const MIN = 0.1;

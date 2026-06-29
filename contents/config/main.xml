@@ -41,8 +41,9 @@
         <choice name="columns"/>
         <choice name="monocle"/>
         <choice name="spotlight"/>
+        <choice name="spiral"/>
       </choices>
-      <default>master-stack</default>
+      <default>spiral</default>
     </entry>
 
     <entry name="defaultMasterRatio" type="Double">

@@ -8,7 +8,7 @@ Fills the gap left by Bismuth (archived) with a clean, modern, Plasma 6-native c
 
 ## Features
 
-- **4 layouts**: master-stack, columns, monocle, spotlight — switchable per virtual desktop
+- **5 layouts**: spiral (Fibonacci, the default), master-stack, columns, monocle, spotlight — switchable per virtual desktop
 - **Configurable gaps**: inner and outer, live-adjustable
 - **Smart float detection**: dialogs, splash screens, non-resizable windows auto-float
 - **Per-app float rules**: define window classes that always float
@@ -73,6 +73,9 @@ Shortcuts can be rebound in **System Settings → Shortcuts → KWin Scripts**.
 
 ## Layouts
 
+### spiral *(default)*
+Fibonacci spiral: the area is split recursively, alternating vertical/horizontal cuts and spiralling clockwise inward (left → top → right → bottom → …), with the last window filling the centre. **Meta+H/L** resize the master (first) split; the rest stay evenly balanced.
+
 ### master-stack
 Left master pane, right stack column. 1 window fills the screen. Default 50/50 split.
 
@@ -127,7 +130,7 @@ cachy-tile/
 - [x] Move window in tile order (Meta+Shift+J / Meta+Shift+K) (v0.3)
 - [x] Send window to previous/next desktop (Meta+Left / Meta+Right) (v0.3)
 - [ ] Session persistence — layout + ratio per desktop *(not yet working: the target KWin build has no script write-config API)*
-- [ ] Spiral / Fibonacci layout
+- [x] Spiral / Fibonacci layout — now the default (v0.3)
 - [x] Scratchpad (multi-window hidden floating layer; doubles as send-to-any-desktop) (v0.3)
 - [ ] Multi-monitor awareness (independent layout per screen)
 - [ ] Plasma widget for layout indicator in taskbar
