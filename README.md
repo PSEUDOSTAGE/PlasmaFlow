@@ -14,6 +14,7 @@ Fills the gap left by Bismuth (archived) with a clean, modern, Plasma 6-native c
 - **Per-app float rules**: define window classes that always float
 - **Keyboard-driven**: i3-style shortcuts for focus, swap, layout cycle, float toggle
 - **Per-desktop layout pinning** (Model B): pin a layout to a desktop in config; Meta+T overrides for the session only
+- **Session persistence**: each desktop's layout and master width are remembered across logout/login
 - **KCM settings panel**: proper UI in System Settings, no config file editing needed
 - **Plasma 6 + Wayland native**: uses KWin 6 scripting API throughout
 
@@ -129,7 +130,7 @@ cachy-tile/
 - [x] Minimized windows drop out of the layout; the rest reflow
 - [x] Move window in tile order (Meta+Shift+J / Meta+Shift+K) (v0.3)
 - [x] Send window to previous/next desktop (Meta+Left / Meta+Right) (v0.3)
-- [ ] Session persistence — layout + ratio per desktop *(not yet working: the target KWin build has no script write-config API)*
+- [x] Session persistence — layout + ratio per desktop, remembered across logout/login (v0.3)
 - [x] Spiral / Fibonacci layout — now the default (v0.3)
 - [x] Scratchpad (multi-window hidden floating layer; doubles as send-to-any-desktop) (v0.3)
 - [ ] Multi-monitor awareness (independent layout per screen)

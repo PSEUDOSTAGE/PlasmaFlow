@@ -84,7 +84,7 @@
 
     <entry name="persistSession" type="Bool">
       <label>Remember layout per desktop</label>
-      <tooltip>Remember each desktop's layout and master width across sessions. Note: not yet functional on the current KWin build (no script write-config API).</tooltip>
+      <tooltip>Remember each desktop's layout and master width across logout/login.</tooltip>
       <default>true</default>
     </entry>
 

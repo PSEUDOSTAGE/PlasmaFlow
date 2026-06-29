@@ -79,41 +79,72 @@ const layoutState = {};
 const scratchWindows = [];
 
 // ─── Session persistence ────────────────────────────────────────────────────
+//
+// We persist each desktop's layout + masterRatio so they survive logout.
+//
+// The write path is the awkward part. This KWin build exposes NO config-write
+// API to scripts: KWin.writeConfig, a global writeConfig, and options.writeConfig
+// are all absent (only the read-only global readConfig() exists, used for CONFIG).
+// callDBus *is* available, but it cannot marshal D-Bus struct types — so systemd's
+// StartTransientUnit (a(sv)/a(sa(sv))) fails and we can't shell out to
+// kwriteconfig6 that way either. (All verified live on this build; see CLAUDE.md.)
+//
+// The one path that works: callDBus into the always-running plasmashell, whose
+// scripting engine *does* expose a `ConfigFile` object that writes KConfig. We
+// write into kwinrc's [Script-cachy-tile] group — the same group our own
+// readConfig() reads — so restore is just a synchronous readConfig() at load,
+// with no async round-trip. plasmashell flushes the write to disk immediately,
+// and KWin re-reads kwinrc on the next script load (KConfig notices the mtime
+// change), so the value is there next session.
+//
+// Storage: key "persist:<screen>:<desktopUuid>" → "<layout>|<ratio>".
 
-/**
- * Persist layout + masterRatio for a desktop key.
- * Uses a flat key like "persist:0:desktop-uuid" → "master-stack|0.6".
- *
- * NOTE: KWin.writeConfig/readConfig are NOT available in this KWin build — the
- * scripting API only exposes a *read* path (the global readConfig() used for
- * CONFIG). Until we wire a real write-back mechanism, persistence degrades to a
- * no-op rather than crashing the engine. See restoreState() for the read guard.
- * TODO(v0.3): implement persistence via a supported API (callDBus / a helper).
- */
-function persistState(key, state) {
-    if (!CONFIG.persistSession) return;
-    if (typeof KWin.writeConfig !== "function") return;
-    const value = `${state.layout}|${state.masterRatio}`;
-    KWin.writeConfig("persist:" + key, value);
+// Last value persisted per key, so repeated identical writes (e.g. cycling back
+// to the same layout, or re-clamping the ratio) don't spam plasmashell. There's
+// no setTimeout in this engine, so this dedupe is our only write throttle.
+const persistedCache = {};
+
+// Run a snippet inside plasmashell's scripting engine. Fire-and-forget: we don't
+// need the result and persistence is best-effort (a no-op if plasmashell is down).
+function plasmaEval(script) {
+    if (typeof callDBus !== "function") return;
+    callDBus("org.kde.plasmashell", "/PlasmaShell",
+             "org.kde.PlasmaShell", "evaluateScript", script);
 }
 
 /**
- * Restore a previously saved layout+ratio for a desktop key, if it exists.
- * Returns { layout, masterRatio } or null. No-ops if the write API is absent
- * (nothing could have been saved) — see persistState().
+ * Persist layout + masterRatio for a desktop key.
+ * key looks like "0:desktop-uuid"; stored as "persist:0:desktop-uuid".
+ */
+function persistState(key, state) {
+    if (!CONFIG.persistSession) return;
+    const value = `${state.layout}|${state.masterRatio}`;
+    if (persistedCache[key] === value) return;
+    persistedCache[key] = value;
+    // key and value are fully script-controlled (screen int, desktop UUID, a
+    // known layout name, a rounded number) — no quotes/backslashes/newlines can
+    // appear, so embedding them directly in the snippet is safe.
+    plasmaEval(
+        'var c = new ConfigFile("kwinrc", "Script-cachy-tile");' +
+        'c.writeEntry("persist:' + key + '", "' + value + '");'
+    );
+}
+
+/**
+ * Restore a previously saved layout+ratio for a desktop key, if any.
+ * Reads straight from kwinrc via the global readConfig() (same group persistState
+ * writes to). Returns { layout, masterRatio } or null.
  */
 function restoreState(key) {
     if (!CONFIG.persistSession) return null;
-    if (typeof KWin.readConfig !== "function") return null;
-    const raw = KWin.readConfig("persist:" + key, "");
+    const raw = readConfig("persist:" + key, "");
     if (!raw) return null;
-    const parts = raw.split("|");
+    const parts = String(raw).split("|");
     if (parts.length !== 2) return null;
-    const layout = parts[0];
-    const ratio  = parseFloat(parts[1]);
-    // Unknown layout names are tolerated here; tile() falls back to master-stack.
+    const ratio = parseFloat(parts[1]);
     if (isNaN(ratio)) return null;
-    return { layout, masterRatio: ratio };
+    // A saved layout that's since been removed maps back to master-stack.
+    return { layout: normalizeLayoutName(parts[0]), masterRatio: ratio };
 }
 
 /**

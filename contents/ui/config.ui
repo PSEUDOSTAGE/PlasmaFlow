@@ -121,7 +121,7 @@ spiral: Fibonacci spiral; split fraction follows master width.</string></propert
       <item>
        <widget class="QCheckBox" name="kcfg_persistSession">
         <property name="text"><string>Remember layout per desktop</string></property>
-        <property name="toolTip"><string>Remember each desktop's layout and master width across sessions. Note: not yet functional on the current KWin build (no script write-config API).</string></property>
+        <property name="toolTip"><string>Remember each desktop's layout and master width across logout/login.</string></property>
        </widget>
       </item>
       <item>
