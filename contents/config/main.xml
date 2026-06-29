@@ -65,7 +65,7 @@
     <entry name="spotlightCornerRatio" type="Double">
       <label>Spotlight corner size</label>
       <tooltip>Spotlight layout only: size of each corner window, as a fraction of the screen's width and height.</tooltip>
-      <default>0.28</default>
+      <default>0.38</default>
       <min>0.10</min>
       <max>0.50</max>
     </entry>

@@ -41,7 +41,7 @@ function loadConfig() {
         defaultLayout:        normalizeLayoutName(readConfig("defaultLayout", "spiral")),
         defaultMasterRatio:   readConfig("defaultMasterRatio", 0.5),
         masterRatioStep:      readConfig("masterRatioStep", 0.05),
-        spotlightCornerRatio: readConfig("spotlightCornerRatio", 0.28),
+        spotlightCornerRatio: readConfig("spotlightCornerRatio", 0.38),
         floatOnStart:         readConfig("floatOnStart", false),
         // NOTE: animationsEnabled is not implemented yet. KWin animates
         // frameGeometry changes itself and a script can't easily suppress that,
@@ -97,7 +97,8 @@ const scratchWindows = [];
 // and KWin re-reads kwinrc on the next script load (KConfig notices the mtime
 // change), so the value is there next session.
 //
-// Storage: key "persist:<screen>:<desktopUuid>" → "<layout>|<ratio>".
+// Storage: key "persist:<screen>:<desktopUuid>" → "<layout>|<masterRatio>|<cornerRatio>".
+// (Legacy entries without the trailing cornerRatio field are still accepted.)
 
 // Last value persisted per key, so repeated identical writes (e.g. cycling back
 // to the same layout, or re-clamping the ratio) don't spam plasmashell. There's
@@ -118,7 +119,7 @@ function plasmaEval(script) {
  */
 function persistState(key, state) {
     if (!CONFIG.persistSession) return;
-    const value = `${state.layout}|${state.masterRatio}`;
+    const value = `${state.layout}|${state.masterRatio}|${state.cornerRatio}`;
     if (persistedCache[key] === value) return;
     persistedCache[key] = value;
     // key and value are fully script-controlled (screen int, desktop UUID, a
@@ -131,20 +132,28 @@ function persistState(key, state) {
 }
 
 /**
- * Restore a previously saved layout+ratio for a desktop key, if any.
+ * Restore a previously saved layout+ratios for a desktop key, if any.
  * Reads straight from kwinrc via the global readConfig() (same group persistState
- * writes to). Returns { layout, masterRatio } or null.
+ * writes to). Returns { layout, masterRatio, cornerRatio? } or null.
+ * Accepts both the legacy 2-field format ("layout|masterRatio") and the current
+ * 3-field one ("layout|masterRatio|cornerRatio"); a missing cornerRatio falls
+ * back to the config default at the call site.
  */
 function restoreState(key) {
     if (!CONFIG.persistSession) return null;
     const raw = readConfig("persist:" + key, "");
     if (!raw) return null;
     const parts = String(raw).split("|");
-    if (parts.length !== 2) return null;
+    if (parts.length < 2) return null;
     const ratio = parseFloat(parts[1]);
     if (isNaN(ratio)) return null;
     // A saved layout that's since been removed maps back to master-stack.
-    return { layout: normalizeLayoutName(parts[0]), masterRatio: ratio };
+    const result = { layout: normalizeLayoutName(parts[0]), masterRatio: ratio };
+    if (parts.length >= 3) {
+        const cr = parseFloat(parts[2]);
+        if (!isNaN(cr)) result.cornerRatio = cr;
+    }
+    return result;
 }
 
 /**
@@ -175,10 +184,12 @@ function getState(window) {
         // If pinned exists, it always wins layout (but saved ratio still applies).
         const layout = pinned || (saved && saved.layout) || CONFIG.defaultLayout;
         const masterRatio = (saved && saved.masterRatio) || CONFIG.defaultMasterRatio;
+        const cornerRatio = (saved && saved.cornerRatio) || CONFIG.spotlightCornerRatio;
 
         layoutState[key] = {
             layout,
             masterRatio,
+            cornerRatio,                    // spotlight corner size, adjustable via Meta+H/L
             pinnedLayout: pinned || null,   // track so cycleLayout can mark it overridden
             windows:      [],
         };
@@ -435,10 +446,35 @@ function tile(window) {
     // master when the master is minimized.
     const visible = state.windows.filter((w) => !w.minimized);
 
-    // Merge per-state masterRatio into the config passed to the layout
-    const layoutCfg = Object.assign({}, CONFIG, { masterRatio: state.masterRatio });
+    // Merge per-state ratios into the config passed to the layout: masterRatio
+    // (master-stack/spiral split) and spotlightCornerRatio (spotlight corner
+    // size). Both are per-desktop and adjustable via Meta+H/L.
+    const layoutCfg = Object.assign({}, CONFIG, {
+        masterRatio:          state.masterRatio,
+        spotlightCornerRatio: state.cornerRatio,
+    });
     const layoutFn  = layouts[state.layout] || layouts["master-stack"];
     layoutFn(visible, area, layoutCfg);
+
+    applyStacking(state, visible);
+}
+
+// Spotlight draws the master full-screen behind the corner windows, so the
+// master must stay *below* them — otherwise focusing it (KWin auto-raises the
+// active window) brings it to the front and hides every corner. This build
+// exposes no raise/lower API, so keepBelow is the only reliable stacking lever:
+// pin the master below and clear it on everyone else. Every other layout clears
+// keepBelow on all tiled windows, so a window never stays stuck below after the
+// layout changes. (Set against the *visible* master — the slot the layout
+// actually drew as master, which is the next window up when the real master is
+// minimized.) A window leaving the tile list has its keepBelow cleared at the
+// removal site, since it's no longer in any state.windows for us to reset here.
+function applyStacking(state, visible) {
+    const master = (state.layout === "spotlight" && visible.length > 1)
+        ? visible[0] : null;
+    for (let i = 0; i < state.windows.length; i++) {
+        state.windows[i].keepBelow = (state.windows[i] === master);
+    }
 }
 
 function retileScreen(screenIndex, desktop) {
@@ -472,6 +508,7 @@ function removeWindow(window) {
         const idx   = state.windows.indexOf(window);
         if (idx !== -1) {
             state.windows.splice(idx, 1);
+            window.keepBelow = false;   // never leave a spotlight master stuck below
             // Retile remaining windows on this screen/desktop
             if (state.windows.length > 0) {
                 tile(state.windows[0]);
@@ -666,6 +703,7 @@ function toggleFloat(window) {
     if (idx !== -1) {
         // Currently tiled → remove and restore original geometry
         state.windows.splice(idx, 1);
+        window.keepBelow = false;   // never leave a spotlight master stuck below
         if (state.windows.length > 0) tile(state.windows[0]);
     } else {
         // Currently floating → add to tile list. If it's a parked scratchpad
@@ -677,14 +715,24 @@ function toggleFloat(window) {
     }
 }
 
-function adjustMasterRatio(window, delta) {
+// Meta+H/L adjust the "primary ratio" of whatever layout is active: in
+// master-stack/spiral that's masterRatio (the split fraction); in spotlight
+// it's cornerRatio (corner window size). Other layouts have no such knob, so
+// it's a silent no-op there.
+function adjustRatio(window, delta) {
     const state = getState(window);
     if (!state) return;
 
-    // masterRatio drives the split fraction in master-stack and spiral; it's
-    // meaningless for the other layouts, so silently no-op there.
-    if (state.layout !== "master-stack" && state.layout !== "spiral") return;
-    if (state.windows.length < 2)        return;
+    if (state.layout === "spotlight") {
+        adjustCornerRatio(window, state, delta);
+    } else if (state.layout === "master-stack" || state.layout === "spiral") {
+        adjustMasterRatio(window, state, delta);
+    }
+    // else: no ratio knob for this layout — no-op.
+}
+
+function adjustMasterRatio(window, state, delta) {
+    if (state.windows.length < 2) return;
 
     const MIN = 0.1;
     const MAX = 0.9;
@@ -693,17 +741,35 @@ function adjustMasterRatio(window, delta) {
     ));
 
     tile(window);
+    persistState(stateKey(window.screen, window.desktops[0].id), state);
 
-    persistState(
-        stateKey(window.screen, window.desktops[0].id),
-        state
-    );
-
-    // OSD: show a small ASCII bar + percentage for quick visual feedback
+    // OSD: small ASCII bar + percentage for quick visual feedback. masterRatio's
+    // useful range is ~0.1–0.9, so ratio*10 maps naturally onto the 10-block bar.
     const pct     = Math.round(state.masterRatio * 100);
     const filled  = Math.round(state.masterRatio * 10);
     const bar     = "█".repeat(filled) + "░".repeat(10 - filled);
     osd.show(`CachyTile  ${bar}  ${pct}%`);
+}
+
+function adjustCornerRatio(window, state, delta) {
+    if (state.windows.length < 2) return;   // only a master visible → no corners to size
+
+    // Matches the spotlightCornerRatio bounds in main.xml.
+    const MIN = 0.1;
+    const MAX = 0.5;
+    state.cornerRatio = Math.min(MAX, Math.max(MIN,
+        Math.round((state.cornerRatio + delta) * 100) / 100
+    ));
+
+    tile(window);
+    persistState(stateKey(window.screen, window.desktops[0].id), state);
+
+    // OSD: normalize over the [MIN,MAX] range so the bar spans its full width
+    // (corner ratio never exceeds 0.5, which would only ever half-fill a raw bar).
+    const pct     = Math.round(state.cornerRatio * 100);
+    const filled  = Math.round((state.cornerRatio - MIN) / (MAX - MIN) * 10);
+    const bar     = "█".repeat(filled) + "░".repeat(10 - filled);
+    osd.show(`CachyTile  corners ${bar}  ${pct}%`);
 }
 
 // ─── Register shortcuts ─────────────────────────────────────────────────────
@@ -801,7 +867,7 @@ registerShortcut(
     "Meta+L",
     () => {
         if (workspace.activeWindow)
-            adjustMasterRatio(workspace.activeWindow, CONFIG.masterRatioStep);
+            adjustRatio(workspace.activeWindow, CONFIG.masterRatioStep);
     }
 );
 
@@ -811,7 +877,7 @@ registerShortcut(
     "Meta+H",
     () => {
         if (workspace.activeWindow)
-            adjustMasterRatio(workspace.activeWindow, -CONFIG.masterRatioStep);
+            adjustRatio(workspace.activeWindow, -CONFIG.masterRatioStep);
     }
 );
 

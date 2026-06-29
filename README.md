@@ -55,8 +55,8 @@ make package
 | Meta + Ctrl + `` ` `` | Park focused window in the scratchpad |
 | Meta + `` ` ``  | Summon / dismiss the scratchpad |
 | Meta + F       | Toggle float (also ejects a summoned scratchpad window into tiling) |
-| Meta + L       | Increase master width (master-stack) |
-| Meta + H       | Decrease master width (master-stack) |
+| Meta + L       | Grow master width (master-stack/spiral) or corner size (spotlight) |
+| Meta + H       | Shrink master width (master-stack/spiral) or corner size (spotlight) |
 
 Shortcuts can be rebound in **System Settings → Shortcuts → KWin Scripts**.
 
@@ -69,6 +69,9 @@ Shortcuts can be rebound in **System Settings → Shortcuts → KWin Scripts**.
 
 > **⚠️ Meta+`` ` `` is KDE's *alternative* binding for "Walk Through Windows of Current Application".**
 > The scratchpad toggle uses it. The primary binding (`Alt+`` ` ``) is unaffected; just clear the **Meta+`` ` ``** chip from that action in **System Settings → Keyboard → Shortcuts** if the toggle cycles app windows instead of summoning the scratchpad.
+
+> **⚠️ Meta+L is KDE's default "Lock Screen" shortcut.**
+> CachyTile uses it to *grow the master width* (master-stack / spiral) or *corner size* (spotlight), so out of the box pressing it will lock the screen instead. To free it up: **System Settings → Keyboard → Shortcuts**, search **`Lock Screen`** (the *Screen Locking* action), click its **Meta+L** chip and clear it, then **Apply** — re-bind locking to another key first if you still want a lock shortcut.
 
 ---
 
@@ -87,7 +90,7 @@ Equal-width vertical columns. Great for wide monitors.
 All windows fullscreen, stacked. Cycle focus with Meta+J/K.
 
 ### spotlight
-Master fills the entire screen. Stack windows sit in the corners, clockwise from bottom-right: BR → TR → TL → BL. More than 4 stack windows overflow into a second layer, scaled down by 70%, sitting behind the first. Corner size is configurable (default 28% of screen dimensions).
+Master fills the entire screen, kept behind the corner windows so it never covers them when focused. Stack windows sit in the corners, clockwise from bottom-right: BR → TR → TL → BL. More than 4 stack windows overflow into a second layer, scaled down by 70%, sitting behind the first. Corner size is configurable (default 38% of screen dimensions) and can be adjusted on the fly with **Meta+H/L**.
 
 ---
 
