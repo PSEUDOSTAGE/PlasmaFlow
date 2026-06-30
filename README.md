@@ -60,12 +60,12 @@ make package
 | Meta + Return  | Swap focused window with master |
 | Meta + J       | Focus next window               |
 | Meta + K       | Focus previous window           |
-| Meta + Shift + J | Move focused window down in tile order |
-| Meta + Shift + K | Move focused window up in tile order   |
+| Meta + Ctrl + J | Move focused window down in tile order |
+| Meta + Ctrl + K | Move focused window up in tile order   |
 | Meta + Left    | Send focused window to previous desktop |
 | Meta + Right   | Send focused window to next desktop     |
-| Meta + Ctrl + `` ` `` | Park focused window in the scratchpad |
-| Meta + `` ` ``  | Summon / dismiss the scratchpad |
+| Meta + Ctrl + Space | Park focused window in the scratchpad |
+| Meta + Space   | Summon / dismiss the scratchpad |
 | Meta + F       | Toggle float (also ejects a summoned scratchpad window into tiling) |
 | Meta + L       | Grow master width (master-stack/spiral) or corner size (spotlight) |
 | Meta + H       | Shrink master width (master-stack/spiral) or corner size (spotlight) |
@@ -79,8 +79,8 @@ Shortcuts can be rebound in **System Settings → Shortcuts → KWin Scripts**.
 > **⚠️ Meta+Left / Meta+Right are KDE's default "Quick Tile Left/Right".**
 > Send-to-desktop uses these. If you still have KDE's quick-tiling on those keys, clear it: **System Settings → Keyboard → Shortcuts**, search **`Quick Tile`**, and clear the **Meta+Left/Right** chips. (Most tiling-script users have already disabled KDE quick-tiling.) *Why arrows and not Meta+Shift+1–9? KWin can't fire script shortcuts on the shifted number row under Wayland, and plain Meta+1–9 is taken by the task manager.*
 
-> **⚠️ Meta+`` ` `` is KDE's *alternative* binding for "Walk Through Windows of Current Application".**
-> The scratchpad toggle uses it. The primary binding (`Alt+`` ` ``) is unaffected; just clear the **Meta+`` ` ``** chip from that action in **System Settings → Keyboard → Shortcuts** if the toggle cycles app windows instead of summoning the scratchpad.
+> **ℹ️ Scratchpad uses Meta+Space (toggle) and Meta+Ctrl+Space (park).**
+> These avoid the grave/tilde key, whose shifted keysym can't fire a script shortcut under Wayland. If **Meta+Space** is bound to something else on your system (e.g. a custom KRunner or keyboard-layout-switch binding), clear it in **System Settings → Keyboard → Shortcuts**.
 
 > **⚠️ Meta+L is KDE's default "Lock Screen" shortcut.**
 > PlasmaFlow uses it to *grow the master width* (master-stack / spiral) or *corner size* (spotlight), so out of the box pressing it will lock the screen instead. To free it up: **System Settings → Keyboard → Shortcuts**, search **`Lock Screen`** (the *Screen Locking* action), click its **Meta+L** chip and clear it, then **Apply** — re-bind locking to another key first if you still want a lock shortcut.
@@ -121,11 +121,11 @@ This option lives in **System Settings → KWin Scripts → PlasmaFlow → Confi
 
 A hidden layer for windows you want out of the way but a keystroke away. It holds **any number** of windows.
 
-- **Park** a window: focus it and press **Meta + Ctrl + `` ` ``**. It leaves the layout (the rest reflow) and hides.
-- **Summon / dismiss**: **Meta + `` ` ``** brings every parked window to your current desktop (floating, cascaded); press again to hide them.
+- **Park** a window: focus it and press **Meta + Ctrl + Space**. It leaves the layout (the rest reflow) and hides.
+- **Summon / dismiss**: **Meta + Space** brings every parked window to your current desktop (floating, cascaded); press again to hide them.
 - **Send back to tiling**: summon the scratchpad, focus a window, and press **Meta + F** — it drops into the current desktop's layout and leaves the scratchpad.
 
-**Tip — move a window to any desktop, even non-adjacent ones:** park it, switch to whatever desktop you want (no matter how far), summon with **Meta + `` ` ``**, then **Meta + F** to tile it there. Meta+Left/Right only move to *neighbouring* desktops, so the scratchpad is the quickest way to send a window somewhere far.
+**Tip — move a window to any desktop, even non-adjacent ones:** park it, switch to whatever desktop you want (no matter how far), summon with **Meta + Space**, then **Meta + F** to tile it there. Meta+Left/Right only move to *neighbouring* desktops, so the scratchpad is the quickest way to send a window somewhere far.
 
 ---
 
@@ -154,7 +154,7 @@ PlasmaFlow/
 - [x] Spotlight layout (v0.2)
 - [x] Per-desktop layout pinning — Model B (v0.2)
 - [x] Minimized windows drop out of the layout; the rest reflow
-- [x] Move window in tile order (Meta+Shift+J / Meta+Shift+K) (v0.3)
+- [x] Move window in tile order (Meta+Ctrl+J / Meta+Ctrl+K) (v0.3)
 - [x] Send window to previous/next desktop (Meta+Left / Meta+Right) (v0.3)
 - [x] Session persistence — layout + ratio per desktop, remembered across logout/login (v0.3)
 - [x] Spiral / Fibonacci layout — now the default (v0.3)

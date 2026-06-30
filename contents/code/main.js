@@ -849,14 +849,14 @@ registerShortcut(
 registerShortcut(
     "PlasmaFlow: Move Window Down",
     "PlasmaFlow: Move Window Down",
-    "Meta+Shift+J",
+    "Meta+Ctrl+J",
     () => { if (workspace.activeWindow) moveNext(workspace.activeWindow); }
 );
 
 registerShortcut(
     "PlasmaFlow: Move Window Up",
     "PlasmaFlow: Move Window Up",
-    "Meta+Shift+K",
+    "Meta+Ctrl+K",
     () => { if (workspace.activeWindow) movePrev(workspace.activeWindow); }
 );
 
@@ -880,21 +880,21 @@ registerShortcut(
     () => { if (workspace.activeWindow) sendToAdjacentDesktop(workspace.activeWindow, 1); }
 );
 
-// Scratchpad. Meta+Grave toggles it (collides with KWin's "Walk Through Windows
-// of Current Application" alt-binding — documented in README; Alt+Grave keeps
-// working). Send uses Meta+Ctrl+Grave, NOT Meta+Shift+Grave: Shift+Grave emits
-// the tilde keysym, which (like the shifted number row) never matches.
+// Scratchpad. Meta+Space toggles it, Meta+Ctrl+Space parks the focused window.
+// We deliberately stay off the grave/tilde key: Shift+Grave emits the tilde
+// keysym (like the shifted number row) which never matches a script shortcut on
+// Wayland, so a Meta+Shift+Grave park binding can't fire — Space sidesteps that.
 registerShortcut(
     "PlasmaFlow: Toggle Scratchpad",
     "PlasmaFlow: Toggle Scratchpad",
-    "Meta+`",
+    "Meta+Space",
     () => { toggleScratchpad(); }
 );
 
 registerShortcut(
     "PlasmaFlow: Send to Scratchpad",
     "PlasmaFlow: Send to Scratchpad",
-    "Meta+Ctrl+`",
+    "Meta+Ctrl+Space",
     () => { if (workspace.activeWindow) sendToScratchpad(workspace.activeWindow); }
 );
 
