@@ -13,6 +13,7 @@
 
 - **5 layouts**: spiral (Fibonacci, the default), master-stack, columns, monocle, spotlight — switchable per virtual desktop
 - **Configurable gaps**: inner and outer, live-adjustable
+- **Borderless tiling** (optional): strip title bars and borders from tiled windows for a clean i3-style look
 - **Smart float detection**: dialogs, splash screens, non-resizable windows auto-float
 - **Per-app float rules**: define window classes that always float
 - **Keyboard-driven**: i3-style shortcuts for focus, swap, layout cycle, float toggle
@@ -105,6 +106,17 @@ Master fills the entire screen, kept behind the corner windows so it never cover
 
 ---
 
+## Appearance
+
+This option lives in **System Settings → KWin Scripts → PlasmaFlow → Configure** and defaults to **off**. Config isn't read live — after changing it, reload the script (disable/enable it in the KCM, or `make reload`).
+
+### Borderless tiling
+**Remove window borders when tiled** strips the title bar and borders from every tiled window for a clean, chrome-free i3/Sway look. Decorations are automatically restored when a window leaves the layout — float it (**Meta+F**) or park it in the scratchpad and the title bar comes back. Windows that draw their own decorations (client-side, e.g. some GTK apps) are unaffected.
+
+> **Telling the active window apart.** With title bars gone, the focused-colour title bar is no longer your active-window cue. The cleanest fix is KWin's built-in **Dim Inactive** effect (**System Settings → Desktop Effects → Dim Inactive**): inactive windows dim and the focused one stays full-brightness. It has a strength slider and pairs perfectly with borderless tiling. (A drawn outline/glow isn't possible from a KWin *script* — that needs a compositor effect.)
+
+---
+
 ## Scratchpad
 
 A hidden layer for windows you want out of the way but a keystroke away. It holds **any number** of windows.
@@ -147,6 +159,7 @@ PlasmaFlow/
 - [x] Session persistence — layout + ratio per desktop, remembered across logout/login (v0.3)
 - [x] Spiral / Fibonacci layout — now the default (v0.3)
 - [x] Scratchpad (multi-window hidden floating layer; doubles as send-to-any-desktop) (v0.3)
+- [x] Borderless tiling — optional no-decoration mode (pairs with KWin's Dim Inactive effect)
 - [ ] Multi-monitor awareness (independent layout per screen)
 - [ ] Plasma widget for layout indicator in taskbar
 

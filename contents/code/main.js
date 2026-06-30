@@ -43,10 +43,9 @@ function loadConfig() {
         masterRatioStep:      readConfig("masterRatioStep", 0.05),
         spotlightCornerRatio: readConfig("spotlightCornerRatio", 0.38),
         floatOnStart:         readConfig("floatOnStart", false),
-        // NOTE: animationsEnabled is not implemented yet. KWin animates
-        // frameGeometry changes itself and a script can't easily suppress that,
-        // so this value is read but unused — a settings-panel placeholder.
-        animationsEnabled:    readConfig("animationsEnabled", true),
+        // noBorderTiling strips decorations from tiled windows (see applyBorders).
+        // Default off (no change).
+        noBorderTiling:       readConfig("noBorderTiling", false),
         persistSession:       readConfig("persistSession", true),
         floatClasses:         readConfig("floatClasses",
             "steam,plasmashell,krunner,yakuake,spectacle,kruler,plasma-desktop"
@@ -482,6 +481,21 @@ function tile(window) {
     layoutFn(visible, area, layoutCfg);
 
     applyStacking(state, visible);
+    applyBorders(state);
+}
+
+// Apply the no-border preference to every window in this tile list. Mirrors
+// applyStacking's no-op guard: only write noBorder when it actually changes,
+// since a redundant decoration toggle forces a relayout/repaint. When
+// noBorderTiling is off this writes `false`, so disabling the setting and
+// reloading restores decorations. A window that *leaves* the tile list has its
+// border restored at the removal site (it's no longer in state.windows here).
+function applyBorders(state) {
+    const want = CONFIG.noBorderTiling;
+    for (let i = 0; i < state.windows.length; i++) {
+        const w = state.windows[i];
+        if (w.noBorder !== want) w.noBorder = want;
+    }
 }
 
 // Spotlight draws the master full-screen behind the corner windows, so the
@@ -530,6 +544,7 @@ function removeWindow(window) {
         if (idx !== -1) {
             state.windows.splice(idx, 1);
             window.keepBelow = false;   // never leave a spotlight master stuck below
+            if (CONFIG.noBorderTiling && window.noBorder) window.noBorder = false;  // restore decoration on leaving the tile list
             // Retile remaining windows on this screen/desktop
             if (state.windows.length > 0) {
                 tile(state.windows[0]);
@@ -725,6 +740,7 @@ function toggleFloat(window) {
         // Currently tiled → remove and restore original geometry
         state.windows.splice(idx, 1);
         window.keepBelow = false;   // never leave a spotlight master stuck below
+        if (CONFIG.noBorderTiling && window.noBorder) window.noBorder = false;  // restore decoration when floated
         if (state.windows.length > 0) tile(state.windows[0]);
     } else {
         // Currently floating → add to tile list. If it's a parked scratchpad

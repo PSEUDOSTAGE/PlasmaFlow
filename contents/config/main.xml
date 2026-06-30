@@ -76,10 +76,10 @@
       <default>false</default>
     </entry>
 
-    <entry name="animationsEnabled" type="Bool">
-      <label>Enable animations (not implemented yet)</label>
-      <tooltip>Reserved for future animation control. Not implemented yet — KWin animates window geometry changes itself.</tooltip>
-      <default>true</default>
+    <entry name="noBorderTiling" type="Bool">
+      <label>Remove window borders when tiled</label>
+      <tooltip>Strip the title bar and borders from tiled windows for a clean i3-style look. Borders are restored when a window floats or is parked. Windows that draw their own decorations (client-side) are unaffected.</tooltip>
+      <default>false</default>
     </entry>
 
     <entry name="persistSession" type="Bool">
