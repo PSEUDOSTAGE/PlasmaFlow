@@ -82,12 +82,6 @@
       <default>false</default>
     </entry>
 
-    <entry name="decorationAwareGaps" type="Bool">
-      <label>Decoration-aware gaps</label>
-      <tooltip>Compensate the gap for window border thickness so the visible spacing between window *contents* matches the configured gap. Only affects windows that keep their borders; has no effect alongside "Remove window borders when tiled".</tooltip>
-      <default>false</default>
-    </entry>
-
     <entry name="persistSession" type="Bool">
       <label>Remember layout per desktop</label>
       <tooltip>Remember each desktop's layout and master width across logout/login.</tooltip>

@@ -130,12 +130,6 @@ spiral: Fibonacci spiral; split fraction follows master width.</string></propert
         <property name="toolTip"><string>Strip the title bar and borders from tiled windows for a clean i3-style look. Borders are restored when a window floats or is parked. Windows that draw their own decorations (client-side) are unaffected.</string></property>
        </widget>
       </item>
-      <item>
-       <widget class="QCheckBox" name="kcfg_decorationAwareGaps">
-        <property name="text"><string>Decoration-aware gaps</string></property>
-        <property name="toolTip"><string>Compensate the gap for window border thickness so the visible spacing between window contents matches the configured gap. Only affects windows that keep their borders; no effect alongside "Remove window borders when tiled".</string></property>
-       </widget>
-      </item>
      </layout>
     </widget>
    </item>

@@ -108,15 +108,12 @@ Master fills the entire screen, kept behind the corner windows so it never cover
 
 ## Appearance
 
-Both options live in **System Settings → KWin Scripts → PlasmaFlow → Configure** and default to **off**. Config isn't read live — after changing it, reload the script (disable/enable it in the KCM, or `make reload`).
+This option lives in **System Settings → KWin Scripts → PlasmaFlow → Configure** and defaults to **off**. Config isn't read live — after changing it, reload the script (disable/enable it in the KCM, or `make reload`).
 
 ### Borderless tiling
 **Remove window borders when tiled** strips the title bar and borders from every tiled window for a clean, chrome-free i3/Sway look. Decorations are automatically restored when a window leaves the layout — float it (**Meta+F**) or park it in the scratchpad and the title bar comes back. Windows that draw their own decorations (client-side, e.g. some GTK apps) are unaffected.
 
 > **Telling the active window apart.** With title bars gone, the focused-colour title bar is no longer your active-window cue. The cleanest fix is KWin's built-in **Dim Inactive** effect (**System Settings → Desktop Effects → Dim Inactive**): inactive windows dim and the focused one stays full-brightness. It has a strength slider and pairs perfectly with borderless tiling. (A drawn outline/glow isn't possible from a KWin *script* — that needs a compositor effect.)
-
-### Decoration-aware gaps *(experimental)*
-**Decoration-aware gaps** compensates the gap for window-border thickness so the visible spacing between window *contents* matches your configured gap. It only does anything if your decoration draws visible side/bottom borders (with Breeze's "No Side Borders" there's nothing to compensate, so it's a no-op), and it can't tighten the title-bar seam between stacked windows. Has no effect alongside borderless tiling.
 
 ---
 
@@ -162,7 +159,7 @@ PlasmaFlow/
 - [x] Session persistence — layout + ratio per desktop, remembered across logout/login (v0.3)
 - [x] Spiral / Fibonacci layout — now the default (v0.3)
 - [x] Scratchpad (multi-window hidden floating layer; doubles as send-to-any-desktop) (v0.3)
-- [x] Borderless tiling — optional no-decoration mode
+- [x] Borderless tiling — optional no-decoration mode (pairs with KWin's Dim Inactive effect)
 - [ ] Multi-monitor awareness (independent layout per screen)
 - [ ] Plasma widget for layout indicator in taskbar
 

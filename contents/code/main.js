@@ -43,11 +43,9 @@ function loadConfig() {
         masterRatioStep:      readConfig("masterRatioStep", 0.05),
         spotlightCornerRatio: readConfig("spotlightCornerRatio", 0.38),
         floatOnStart:         readConfig("floatOnStart", false),
-        // Aesthetics. noBorderTiling strips decorations from tiled windows;
-        // decorationAwareGaps compensates the gap for border thickness (see
-        // applyBorders / compensateDecorations). Both default off (no change).
+        // noBorderTiling strips decorations from tiled windows (see applyBorders).
+        // Default off (no change).
         noBorderTiling:       readConfig("noBorderTiling", false),
-        decorationAwareGaps:  readConfig("decorationAwareGaps", false),
         persistSession:       readConfig("persistSession", true),
         floatClasses:         readConfig("floatClasses",
             "steam,plasmashell,krunner,yakuake,spectacle,kruler,plasma-desktop"
@@ -479,17 +477,9 @@ function tile(window) {
         masterRatio:          state.masterRatio,
         spotlightCornerRatio: state.cornerRatio,
     });
-    // Decoration-aware gaps: capture each window's border thickness BEFORE the
-    // layout moves anything, so the frame/client geometries we diff come from the
-    // same consistent moment. Skipped when borders are being stripped anyway
-    // (noBorderTiling), since the two features are mutually exclusive by design.
-    const deco = (CONFIG.decorationAwareGaps && !CONFIG.noBorderTiling)
-        ? captureDeco(visible) : null;
-
     const layoutFn  = layouts[state.layout] || layouts["master-stack"];
     layoutFn(visible, area, layoutCfg);
 
-    if (deco) compensateDecorations(visible, deco, layoutCfg);
     applyStacking(state, visible);
     applyBorders(state);
 }
@@ -505,60 +495,6 @@ function applyBorders(state) {
     for (let i = 0; i < state.windows.length; i++) {
         const w = state.windows[i];
         if (w.noBorder !== want) w.noBorder = want;
-    }
-}
-
-// Read a window's decoration thickness (frame minus client) from its CURRENT
-// realized geometry. Border/title-bar thickness is constant regardless of window
-// size, so the extents stay valid after the window is resized. Returns
-// {l,t,r,b} or null when the geometry is missing or implausible (stale /
-// unrealized), in which case that window is left uncompensated.
-function decoExtents(w) {
-    const fg = w.frameGeometry;
-    const cg = w.clientGeometry;
-    if (!fg || !cg) return null;
-    const l = cg.x - fg.x;
-    const t = cg.y - fg.y;
-    const r = (fg.x + fg.width)  - (cg.x + cg.width);
-    const b = (fg.y + fg.height) - (cg.y + cg.height);
-    // Decoration sits outside the content, so extents are >= 0. Reject negative
-    // or absurd values rather than fling a window off-screen.
-    if (l < 0 || t < 0 || r < 0 || b < 0)             return null;
-    if (l > 200 || t > 200 || r > 200 || b > 200)     return null;
-    return { l: l, t: t, r: r, b: b };
-}
-
-function captureDeco(visible) {
-    const out = [];
-    for (let i = 0; i < visible.length; i++) out.push(decoExtents(visible[i]));
-    return out;
-}
-
-// Decoration-aware gaps: the layout positioned window *frames*, but the visible
-// border sits between the frame edge and the content, so the spacing between
-// window *contents* is really gap + border-thickness on each side. Expand each
-// frame outward by its border thickness (left/right/bottom only) so the content
-// edges land on the gap boundary and content-to-content spacing equals `gap`.
-// The top edge is left alone on purpose: it's the title bar, far taller than a
-// gap, which can't be folded in without overlapping the window above. Each
-// expansion is clamped to one gap so frames never collide. No-op for windows
-// with no side/bottom border (e.g. Breeze "no side borders"), and cheap because
-// it only re-writes geometry that actually changed.
-function compensateDecorations(visible, deco, cfg) {
-    const cap = cfg.gap;
-    for (let i = 0; i < visible.length; i++) {
-        const d = deco[i];
-        if (!d || (d.l === 0 && d.r === 0 && d.b === 0)) continue;
-        const w  = visible[i];
-        const fg = w.frameGeometry;
-        const dl = Math.min(d.l, cap);
-        const dr = Math.min(d.r, cap);
-        const db = Math.min(d.b, cap);
-        const x      = fg.x - dl;
-        const width  = fg.width  + dl + dr;
-        const height = fg.height + db;
-        if (x === fg.x && width === fg.width && height === fg.height) continue;
-        w.frameGeometry = rect(x, fg.y, width, height);
     }
 }
 
