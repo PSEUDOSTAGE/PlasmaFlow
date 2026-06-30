@@ -124,12 +124,6 @@ spiral: Fibonacci spiral; split fraction follows master width.</string></propert
         <property name="toolTip"><string>Remember each desktop's layout and master width across logout/login.</string></property>
        </widget>
       </item>
-      <item>
-       <widget class="QCheckBox" name="kcfg_animationsEnabled">
-        <property name="text"><string>Enable animations (not implemented yet)</string></property>
-        <property name="toolTip"><string>Reserved for future animation control. Not implemented yet — KWin animates window geometry changes itself.</string></property>
-       </widget>
-      </item>
      </layout>
     </widget>
    </item>

@@ -76,12 +76,6 @@
       <default>false</default>
     </entry>
 
-    <entry name="animationsEnabled" type="Bool">
-      <label>Enable animations (not implemented yet)</label>
-      <tooltip>Reserved for future animation control. Not implemented yet — KWin animates window geometry changes itself.</tooltip>
-      <default>true</default>
-    </entry>
-
     <entry name="persistSession" type="Bool">
       <label>Remember layout per desktop</label>
       <tooltip>Remember each desktop's layout and master width across logout/login.</tooltip>

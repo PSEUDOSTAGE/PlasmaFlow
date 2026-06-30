@@ -43,10 +43,6 @@ function loadConfig() {
         masterRatioStep:      readConfig("masterRatioStep", 0.05),
         spotlightCornerRatio: readConfig("spotlightCornerRatio", 0.38),
         floatOnStart:         readConfig("floatOnStart", false),
-        // NOTE: animationsEnabled is not implemented yet. KWin animates
-        // frameGeometry changes itself and a script can't easily suppress that,
-        // so this value is read but unused — a settings-panel placeholder.
-        animationsEnabled:    readConfig("animationsEnabled", true),
         persistSession:       readConfig("persistSession", true),
         floatClasses:         readConfig("floatClasses",
             "steam,plasmashell,krunner,yakuake,spectacle,kruler,plasma-desktop"
