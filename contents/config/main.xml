@@ -76,6 +76,18 @@
       <default>false</default>
     </entry>
 
+    <entry name="noBorderTiling" type="Bool">
+      <label>Remove window borders when tiled</label>
+      <tooltip>Strip the title bar and borders from tiled windows for a clean i3-style look. Borders are restored when a window floats or is parked. Windows that draw their own decorations (client-side) are unaffected.</tooltip>
+      <default>false</default>
+    </entry>
+
+    <entry name="decorationAwareGaps" type="Bool">
+      <label>Decoration-aware gaps</label>
+      <tooltip>Compensate the gap for window border thickness so the visible spacing between window *contents* matches the configured gap. Only affects windows that keep their borders; has no effect alongside "Remove window borders when tiled".</tooltip>
+      <default>false</default>
+    </entry>
+
     <entry name="persistSession" type="Bool">
       <label>Remember layout per desktop</label>
       <tooltip>Remember each desktop's layout and master width across logout/login.</tooltip>
