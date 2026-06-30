@@ -669,7 +669,12 @@ function sendToAdjacentDesktop(window, dir) {
 // Any number of windows can be parked in the scratchpad. They live outside the
 // tiling layout (shouldFloat keeps them un-tiled) and are summoned/dismissed
 // together with Meta+Grave: "hidden" = minimized; "shown" = un-minimized, pulled
-// to the current desktop, cascaded, and focused.
+// to the current desktop, and focused — each window keeps its own size and
+// position. We deliberately never resize or reposition scratchpad windows: a
+// window is parked exactly as it sits, and whatever the user moves/resizes it to
+// while summoned is preserved (KWin keeps frameGeometry across minimize), even as
+// other windows are parked or summoned. This makes the scratchpad a free-floating
+// layer the user controls, not a cascaded auto-arranged one.
 
 function windowOnDesktop(window, desktop) {
     if (!desktop) return true;
@@ -677,20 +682,6 @@ function windowOnDesktop(window, desktop) {
     if (!ds || ds.length === 0) return true;   // empty = on all desktops
     for (let i = 0; i < ds.length; i++) if (ds[i].id === desktop.id) return true;
     return false;
-}
-
-// Position one scratchpad window: 60% of the usable area, cascaded by `index`
-// so multiple windows don't perfectly overlap, kept centred as a group.
-function cascadeFloating(window, index, count) {
-    const area = workspace.clientArea(KWin.PlacementArea, window);
-    const w = Math.floor(area.width * 0.6);
-    const h = Math.floor(area.height * 0.6);
-    const step = 40;
-    const baseX = area.x + Math.floor((area.width - w) / 2) - Math.floor(step * (count - 1) / 2);
-    const baseY = area.y + Math.floor((area.height - h) / 2) - Math.floor(step * (count - 1) / 2);
-    const x = Math.max(area.x, Math.min(baseX + index * step, area.x + area.width - w));
-    const y = Math.max(area.y, Math.min(baseY + index * step, area.y + area.height - h));
-    window.frameGeometry = rect(x, y, w, h);
 }
 
 // Park the focused window in the scratchpad and hide it. Pulling it out of the
@@ -705,13 +696,14 @@ function sendToScratchpad(window) {
     showOsd("PlasmaFlow: scratchpad (" + n + " window" + (n === 1 ? "" : "s") + ")");
 }
 
-// Show every scratchpad window on `desktop`, cascaded, and focus the top one.
+// Show every scratchpad window on `desktop`, in place, and focus the top one.
+// We pull each window to the desktop and un-minimize it but leave its geometry
+// untouched, so the user's own size/position is preserved across toggles.
 function showScratchpad(desktop) {
     for (let i = 0; i < scratchWindows.length; i++) {
         const w = scratchWindows[i];
         if (desktop) w.desktops = [desktop];
         w.minimized = false;
-        cascadeFloating(w, i, scratchWindows.length);
     }
     workspace.activeWindow = scratchWindows[scratchWindows.length - 1];
 }

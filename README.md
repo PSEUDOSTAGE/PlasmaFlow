@@ -121,8 +121,8 @@ This option lives in **System Settings → KWin Scripts → PlasmaFlow → Confi
 
 A hidden layer for windows you want out of the way but a keystroke away. It holds **any number** of windows.
 
-- **Park** a window: focus it and press **Meta + Ctrl + Space**. It leaves the layout (the rest reflow) and hides.
-- **Summon / dismiss**: **Meta + Space** brings every parked window to your current desktop (floating, cascaded); press again to hide them.
+- **Park** a window: focus it and press **Meta + Ctrl + Space**. It leaves the layout (the rest reflow) and hides — kept exactly at its current size and position.
+- **Summon / dismiss**: **Meta + Space** brings every parked window to your current desktop (floating, each in place); press again to hide them. Move or resize a summoned window however you like — it keeps that size and position the next time you summon it, even as you park more windows.
 - **Send back to tiling**: summon the scratchpad, focus a window, and press **Meta + F** — it drops into the current desktop's layout and leaves the scratchpad.
 
 **Tip — move a window to any desktop, even non-adjacent ones:** park it, switch to whatever desktop you want (no matter how far), summon with **Meta + Space**, then **Meta + F** to tile it there. Meta+Left/Right only move to *neighbouring* desktops, so the scratchpad is the quickest way to send a window somewhere far.
