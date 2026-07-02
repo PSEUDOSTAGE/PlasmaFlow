@@ -67,8 +67,8 @@ make package
 | Meta + Ctrl + Space | Park focused window in the scratchpad |
 | Meta + Space   | Summon / dismiss the scratchpad |
 | Meta + F       | Toggle float (also ejects a summoned scratchpad window into tiling) |
-| Meta + L       | Grow master width (master-stack/spiral) or corner size (spotlight) |
-| Meta + H       | Shrink master width (master-stack/spiral) or corner size (spotlight) |
+| Meta + L       | Grow the focused window (master-stack/columns/spiral) or corner size (spotlight) |
+| Meta + H       | Shrink the focused window (master-stack/columns/spiral) or corner size (spotlight) |
 
 Shortcuts can be rebound in **System Settings → Shortcuts → KWin Scripts**.
 
@@ -83,20 +83,20 @@ Shortcuts can be rebound in **System Settings → Shortcuts → KWin Scripts**.
 > These avoid the grave/tilde key, whose shifted keysym can't fire a script shortcut under Wayland. If **Meta+Space** is bound to something else on your system (e.g. a custom KRunner or keyboard-layout-switch binding), clear it in **System Settings → Keyboard → Shortcuts**.
 
 > **⚠️ Meta+L is KDE's default "Lock Screen" shortcut.**
-> PlasmaFlow uses it to *grow the master width* (master-stack / spiral) or *corner size* (spotlight), so out of the box pressing it will lock the screen instead. To free it up: **System Settings → Keyboard → Shortcuts**, search **`Lock Screen`** (the *Screen Locking* action), click its **Meta+L** chip and clear it, then **Apply** — re-bind locking to another key first if you still want a lock shortcut.
+> PlasmaFlow uses it to *grow the focused window* (master-stack / columns / spiral) or *corner size* (spotlight), so out of the box pressing it will lock the screen instead. To free it up: **System Settings → Keyboard → Shortcuts**, search **`Lock Screen`** (the *Screen Locking* action), click its **Meta+L** chip and clear it, then **Apply** — re-bind locking to another key first if you still want a lock shortcut.
 
 ---
 
 ## Layouts
 
 ### spiral *(default)*
-Fibonacci spiral: the area is split recursively, alternating vertical/horizontal cuts and spiralling clockwise inward (left → top → right → bottom → …), with the last window filling the centre. **Meta+H/L** resize the master (first) split; the rest stay evenly balanced.
+Fibonacci spiral: the area is split recursively, alternating vertical/horizontal cuts and spiralling clockwise inward (left → top → right → bottom → …), with the last window filling the centre. **Meta+H/L** grow/shrink the **focused** window along its own cut — e.g. the top window grows downward, the right window grows leftward. The final (centre) window resizes via the cut it borders.
 
 ### master-stack
-Left master pane, right stack column. 1 window fills the screen. Default 50/50 split.
+Left master pane, right stack column. 1 window fills the screen. Default 50/50 split. **Meta+H/L** resize the **focused** window: the master's width when it's focused, or a stack window's height (relative to its neighbours) when a stack window is focused.
 
 ### columns
-Equal-width vertical columns. Great for wide monitors.
+Equal-width vertical columns. Great for wide monitors. **Meta+H/L** grow/shrink the **focused** column's width.
 
 ### monocle
 All windows fullscreen, stacked. Cycle focus with Meta+J/K.

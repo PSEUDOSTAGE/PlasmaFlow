@@ -252,6 +252,32 @@ function rect(x, y, width, height) {
     return { x: x, y: y, width: width, height: height };
 }
 
+// Build an array of length n filled with v. Used for uniform default size
+// weights (see the focus-relative resizing helpers below).
+function filledArray(n, v) {
+    const a = [];
+    for (let i = 0; i < n; i++) a.push(v);
+    return a;
+}
+
+// Split `total` pixels among slots in proportion to `weights`, returning
+// integer sizes that sum to exactly `total` (the last slot absorbs rounding
+// drift). Used by the layouts that size windows relative to one another
+// (columns' widths, master-stack's stack heights).
+function weightedSizes(weights, total) {
+    let sum = 0;
+    for (let i = 0; i < weights.length; i++) sum += weights[i];
+    const sizes = [];
+    let acc = 0;
+    for (let i = 0; i < weights.length; i++) {
+        const s = (i === weights.length - 1) ? (total - acc)
+                                             : Math.floor(total * weights[i] / sum);
+        sizes.push(s);
+        acc += s;
+    }
+    return sizes;
+}
+
 const layouts = {
 
     /**
@@ -279,7 +305,14 @@ const layouts = {
         const masterWidth = Math.floor(usableWidth * ratio);
         const stackWidth  = usableWidth - masterWidth;
         const stackCount  = windows.length - 1;
-        const stackH      = Math.floor((area.height - og * 2 - g * (stackCount - 1)) / stackCount);
+
+        // Stack heights are focus-relative: each window's height is proportional
+        // to its weight (all 1 by default → equal heights). Meta+H/L adjusts the
+        // focused stack window's weight. Fall back to equal if weights are stale.
+        const weights = (cfg.stackWeights && cfg.stackWeights.length === stackCount)
+            ? cfg.stackWeights : filledArray(stackCount, 1);
+        const usableH  = area.height - og * 2 - g * (stackCount - 1);
+        const heights  = weightedSizes(weights, usableH);
 
         // Master
         windows[0].frameGeometry = rect(
@@ -290,14 +323,15 @@ const layouts = {
         );
 
         // Stack
+        let y = area.y + og;
         for (let i = 1; i < windows.length; i++) {
-            const y = area.y + og + (i - 1) * (stackH + g);
             windows[i].frameGeometry = rect(
                 area.x + og + masterWidth + g,
                 y,
                 stackWidth,
-                stackH
+                heights[i - 1]
             );
+            y += heights[i - 1] + g;
         }
     },
 
@@ -310,15 +344,24 @@ const layouts = {
         const g   = cfg.gap;
         const og  = cfg.outerGap;
         const n   = windows.length;
-        const colW = Math.floor((area.width - og * 2 - g * (n - 1)) / n);
 
+        // Column widths are focus-relative: each column's width is proportional
+        // to its weight (all 1 by default → equal columns). Meta+H/L adjusts the
+        // focused column's weight. Fall back to equal if weights are stale.
+        const weights = (cfg.colWeights && cfg.colWeights.length === n)
+            ? cfg.colWeights : filledArray(n, 1);
+        const usable = area.width - og * 2 - g * (n - 1);
+        const widths = weightedSizes(weights, usable);
+
+        let x = area.x + og;
         for (let i = 0; i < n; i++) {
             windows[i].frameGeometry = rect(
-                area.x + og + i * (colW + g),
+                x,
                 area.y + og,
-                colW,
+                widths[i],
                 area.height - og * 2
             );
+            x += widths[i] + g;
         }
     },
 
@@ -406,17 +449,21 @@ const layouts = {
     /**
      * spiral (Fibonacci): recursively split the usable area, alternating
      * vertical and horizontal cuts and spiralling clockwise inward — left, top,
-     * right, bottom, left, … The first cut (the master split) uses `masterRatio`
-     * so Meta+H/L grows/shrinks the master area; every subsequent cut is an even
-     * 50/50 so the remaining windows stay balanced and the final window fills
-     * what's left. (Using masterRatio for *every* cut made the innermost window
-     * balloon as the ratio shrank — unintuitive, so we don't.)
+     * right, bottom, left, … Each window (except the last, which fills the rest)
+     * owns one cut, and its cut ratio is focus-relative: Meta+H/L grows/shrinks
+     * whichever window is focused along that cut's axis. `cfg.spiralRatios` holds
+     * one ratio per cut; ratio[0] is the master split (tracks masterRatio),
+     * others default to 0.5. Fall back to that default if ratios are stale.
      */
     "spiral": function(windows, area, cfg) {
         if (windows.length === 0) return;
 
         const g  = cfg.gap;
         const og = cfg.outerGap;
+
+        const cutCount = windows.length - 1;
+        const ratios   = (cfg.spiralRatios && cfg.spiralRatios.length === cutCount)
+            ? cfg.spiralRatios : null;
 
         let x = area.x + og;
         let y = area.y + og;
@@ -429,8 +476,8 @@ const layouts = {
                 break;
             }
 
-            // Only the master split follows masterRatio; the rest split evenly.
-            const ratio = (i === 0) ? cfg.masterRatio : 0.5;
+            // Per-cut ratio: cut 0 is the master split, the rest default to 0.5.
+            const ratio = ratios ? ratios[i] : ((i === 0) ? cfg.masterRatio : 0.5);
             const dir = i % 4;
             if (dir === 0) {                      // cut vertical, window left
                 const cut = Math.max(0, Math.floor((w - g) * ratio));
@@ -453,6 +500,38 @@ const layouts = {
     },
 
 };
+
+// ─── Focus-relative sizing (session-only) ─────────────────────────────────────
+//
+// columns, master-stack (stack), and spiral let Meta+H/L resize the *focused*
+// window relative to its neighbours. The sizes live on `state` but are NOT
+// persisted — window order is too fragile to save (see Session persistence in
+// CLAUDE.md), so they reset whenever the layout or visible-window count changes.
+// Only the master/first-cut split (masterRatio) persists, as it always has.
+
+// Lazily (re)build a proportional size-weight array on `state.sizes`, tagged with
+// the layout + length it was built for. Rebuilt (to all-1) whenever either
+// changes, since each slot's meaning depends on the current layout and count.
+function ensureWeights(state, layout, count) {
+    const cur = state.sizes;
+    if (!cur || cur.layout !== layout || cur.values.length !== count) {
+        state.sizes = { layout: layout, values: filledArray(count, 1) };
+    }
+    return state.sizes.values;
+}
+
+// Spiral cut ratios: one per cut (windows.length - 1). Cut 0 always tracks the
+// persisted masterRatio; the rest default to 0.5 and are session-only. Rebuilt
+// when the cut count changes; cut 0 is re-synced from masterRatio every call.
+function ensureSpiralRatios(state, cutCount) {
+    let cur = state.spiralRatios;
+    if (!cur || cur.length !== cutCount) {
+        cur = filledArray(cutCount, 0.5);
+        state.spiralRatios = cur;
+    }
+    if (cutCount > 0) cur[0] = state.masterRatio;
+    return cur;
+}
 
 // ─── Tile trigger ───────────────────────────────────────────────────────────
 
@@ -477,6 +556,17 @@ function tile(window) {
         masterRatio:          state.masterRatio,
         spotlightCornerRatio: state.cornerRatio,
     });
+
+    // Focus-relative per-window sizes for the layouts that support them.
+    const n = visible.length;
+    if (state.layout === "columns") {
+        layoutCfg.colWeights = ensureWeights(state, "columns", n);
+    } else if (state.layout === "master-stack") {
+        layoutCfg.stackWeights = ensureWeights(state, "master-stack", Math.max(0, n - 1));
+    } else if (state.layout === "spiral") {
+        layoutCfg.spiralRatios = ensureSpiralRatios(state, Math.max(0, n - 1));
+    }
+
     const layoutFn  = layouts[state.layout] || layouts["master-stack"];
     layoutFn(visible, area, layoutCfg);
 
@@ -744,20 +834,111 @@ function toggleFloat(window) {
     }
 }
 
-// Meta+H/L adjust the "primary ratio" of whatever layout is active: in
-// master-stack/spiral that's masterRatio (the split fraction); in spotlight
-// it's cornerRatio (corner window size). Other layouts have no such knob, so
-// it's a silent no-op there.
+// Meta+H/L resize the *focused* window relative to its neighbours, dispatched to
+// whatever the active layout supports: the focused column's width (columns), a
+// stack window's height or the master's width (master-stack), the focused
+// window's cut (spiral), or the corner size (spotlight). monocle has no knob, so
+// it's a silent no-op. `delta`'s sign is grow (+) / shrink (-); its magnitude is
+// the ratio step (masterRatioStep) for the fraction-based knobs.
 function adjustRatio(window, delta) {
     const state = getState(window);
     if (!state) return;
 
-    if (state.layout === "spotlight") {
-        adjustCornerRatio(window, state, delta);
-    } else if (state.layout === "master-stack" || state.layout === "spiral") {
-        adjustMasterRatio(window, state, delta);
+    switch (state.layout) {
+        case "spotlight":    adjustCornerRatio(window, state, delta); break;
+        case "columns":      adjustColumn(window, state, delta);      break;
+        case "master-stack": adjustStack(window, state, delta);       break;
+        case "spiral":       adjustSpiral(window, state, delta);      break;
+        // monocle: no size knob — no-op.
     }
-    // else: no ratio knob for this layout — no-op.
+}
+
+// The focused window's position in the *visible* (non-minimized) tile order,
+// and that visible list. index is -1 if the focused window isn't tiled here
+// (e.g. it's floating), so callers can no-op.
+function visibleTile(state, window) {
+    const visible = state.windows.filter((w) => !w.minimized);
+    return { visible: visible, index: visible.indexOf(window) };
+}
+
+// Grow (+) / shrink (-) one proportional size weight by a fixed step, clamped so
+// a window can neither vanish nor swallow the row. Weights are relative, so the
+// step is independent of the fraction-based masterRatioStep.
+const WEIGHT_STEP = 0.2;
+const WEIGHT_MIN  = 0.3;
+const WEIGHT_MAX  = 4.0;
+function bumpWeight(weights, i, delta) {
+    const next = weights[i] + (delta > 0 ? WEIGHT_STEP : -WEIGHT_STEP);
+    weights[i] = Math.min(WEIGHT_MAX, Math.max(WEIGHT_MIN, Math.round(next * 100) / 100));
+}
+
+// OSD for a weighted resize: show the focused window's share of the row/column.
+function showShareOsd(label, weights, i) {
+    let sum = 0;
+    for (let k = 0; k < weights.length; k++) sum += weights[k];
+    const share  = weights[i] / sum;
+    const pct    = Math.round(share * 100);
+    const filled = Math.round(share * 10);
+    showOsd(`PlasmaFlow  ${label} ${ratioBar(filled)}  ${pct}%`);
+}
+
+// columns: resize the focused column's width. Needs ≥2 columns to redistribute.
+function adjustColumn(window, state, delta) {
+    const t = visibleTile(state, window);
+    if (t.index < 0 || t.visible.length < 2) return;
+
+    const weights = ensureWeights(state, "columns", t.visible.length);
+    bumpWeight(weights, t.index, delta);
+    tile(window);
+    showShareOsd("width", weights, t.index);
+}
+
+// master-stack: master (index 0) resizes width (the persisted masterRatio); a
+// stack window resizes its height relative to the other stack windows. A lone
+// stack window (2 windows total) has no sibling to trade with → no-op.
+function adjustStack(window, state, delta) {
+    const t = visibleTile(state, window);
+    if (t.index < 0) return;
+
+    if (t.index === 0) { adjustMasterRatio(window, state, delta); return; }
+
+    const stackCount = t.visible.length - 1;
+    if (stackCount < 2) return;
+
+    const weights = ensureWeights(state, "master-stack", stackCount);
+    const si = t.index - 1;
+    bumpWeight(weights, si, delta);
+    tile(window);
+    showShareOsd("height", weights, si);
+}
+
+// spiral: resize the focused window along its own cut. The final window owns no
+// cut, so it resizes via the cut it borders (grow it = shrink the prior cut).
+// Cut 0 is the master split → routed through masterRatio (persisted).
+function adjustSpiral(window, state, delta) {
+    const t = visibleTile(state, window);
+    if (t.index < 0 || t.visible.length < 2) return;
+
+    const cutCount = t.visible.length - 1;
+    let cut  = t.index;
+    let sign = 1;
+    if (t.index === cutCount) {   // final window: move the cut it borders, inverted
+        cut  = cutCount - 1;
+        sign = -1;
+    }
+
+    if (cut === 0) { adjustMasterRatio(window, state, sign * delta); return; }
+
+    const ratios = ensureSpiralRatios(state, cutCount);
+    const MIN = 0.1, MAX = 0.9;
+    ratios[cut] = Math.min(MAX, Math.max(MIN,
+        Math.round((ratios[cut] + sign * delta) * 100) / 100
+    ));
+    tile(window);
+
+    const pct    = Math.round(ratios[cut] * 100);
+    const filled = Math.round(ratios[cut] * 10);
+    showOsd(`PlasmaFlow  ${ratioBar(filled)}  ${pct}%`);
 }
 
 // Build the 10-segment OSD ratio bar. Uses colour-emoji squares (🟦 filled /
@@ -770,7 +951,7 @@ function ratioBar(filled) {
 }
 
 function adjustMasterRatio(window, state, delta) {
-    if (state.windows.length < 2) return;
+    if (state.windows.filter((w) => !w.minimized).length < 2) return;
 
     const MIN = 0.1;
     const MAX = 0.9;
