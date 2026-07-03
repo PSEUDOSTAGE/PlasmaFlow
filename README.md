@@ -11,7 +11,7 @@
 
 ## Features
 
-- **5 layouts**: spiral (Fibonacci, the default), master-stack, columns, monocle, spotlight — switchable per virtual desktop
+- **6 layouts**: spiral (Fibonacci, the default), master-stack, columns, monocle, spotlight, quadrant (2×2 grid) — switchable per virtual desktop
 - **Configurable gaps**: inner and outer, live-adjustable
 - **Borderless tiling** (optional): strip title bars and borders from tiled windows for a clean i3-style look
 - **Smart float detection**: dialogs, splash screens, non-resizable windows auto-float
@@ -67,8 +67,8 @@ make package
 | Meta + Ctrl + Space | Park focused window in the scratchpad |
 | Meta + Space   | Summon / dismiss the scratchpad |
 | Meta + F       | Toggle float (also ejects a summoned scratchpad window into tiling) |
-| Meta + L       | Grow the focused window (master-stack/columns/spiral) or corner size (spotlight) |
-| Meta + H       | Shrink the focused window (master-stack/columns/spiral) or corner size (spotlight) |
+| Meta + L       | Grow the focused window (master-stack/columns/spiral, quadrant diagonally) or corner size (spotlight) |
+| Meta + H       | Shrink the focused window (master-stack/columns/spiral, quadrant diagonally) or corner size (spotlight) |
 
 Shortcuts can be rebound in **System Settings → Shortcuts → KWin Scripts**.
 
@@ -103,6 +103,13 @@ All windows fullscreen, stacked. Cycle focus with Meta+J/K.
 
 ### spotlight
 Master fills the entire screen, kept behind the corner windows so it never covers them when focused. Stack windows sit in the corners, clockwise from bottom-right: BR → TR → TL → BL. More than 4 stack windows overflow into a second layer, scaled down by 70%, sitting behind the first. Corner size is configurable (default 38% of screen dimensions) and can be adjusted on the fly with **Meta+H/L**.
+
+### quadrant
+A 2×2 grid. Windows fill the quadrants in the order **TL → TR → BR → BL**: one window is fullscreen, two split the screen left/right, three fill three quadrants with the **bottom-left left empty**, and four take one quadrant each.
+
+**Meta+H/L** grow/shrink the **focused** window *diagonally* — it expands from its own corner toward the centre, keeping its proportions, while the other windows adjust to make room (the diagonally-opposite window shrinks to match). Because the whole grid pivots on a single point, growing a *different* window first pulls the grid back to even (shrinking whichever window is currently largest), and only then starts to enlarge the focused one — so you can always get back to an even grid by growing the small window.
+
+Opening a **5th** window (or more) doesn't disturb the grid: the extra windows **float and cascade in the centre**, ready to move where you like or pull into another layout with **Meta+F**.
 
 ---
 
@@ -160,6 +167,7 @@ PlasmaFlow/
 - [x] Spiral / Fibonacci layout — now the default (v0.3)
 - [x] Scratchpad (multi-window hidden floating layer; doubles as send-to-any-desktop) (v0.3)
 - [x] Borderless tiling — optional no-decoration mode (pairs with KWin's Dim Inactive effect)
+- [x] Quadrant layout — 2×2 grid with diagonal focus-relative resizing; overflow windows float and cascade
 - [ ] Multi-monitor awareness (independent layout per screen)
 - [ ] Plasma widget for layout indicator in taskbar
 

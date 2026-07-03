@@ -35,13 +35,14 @@
          QComboBox item order in ../ui/config.ui. -->
     <entry name="defaultLayout" type="Enum">
       <label>Default layout</label>
-      <tooltip>Layout used on a desktop with no pinned or saved layout: master-stack, columns, monocle, or spotlight.</tooltip>
+      <tooltip>Layout used on a desktop with no pinned or saved layout: master-stack, columns, monocle, spotlight, spiral, or quadrant.</tooltip>
       <choices>
         <choice name="master-stack"/>
         <choice name="columns"/>
         <choice name="monocle"/>
         <choice name="spotlight"/>
         <choice name="spiral"/>
+        <choice name="quadrant"/>
       </choices>
       <default>spiral</default>
     </entry>
