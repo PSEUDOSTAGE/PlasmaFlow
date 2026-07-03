@@ -11,7 +11,7 @@
 // ─── Config ────────────────────────────────────────────────────────────────
 
 // Known layout names, in the same order as the config combo box / Enum choices.
-const LAYOUT_NAMES = ["master-stack", "columns", "monocle", "spotlight", "spiral"];
+const LAYOUT_NAMES = ["master-stack", "columns", "monocle", "spotlight", "spiral", "quadrant"];
 
 // Tolerate a defaultLayout that comes back as a numeric index (e.g. "0" from an
 // older combo-box binding) by mapping it to the layout name; pass names through.
@@ -499,6 +499,64 @@ const layouts = {
         }
     },
 
+    /**
+     * quadrant (2x2 grid): windows fill a 2x2 grid, filled in the order
+     * TL → TR → BR → BL. With 1 window it's fullscreen; with 2 it's a
+     * left/right split; with 3 the bottom-left quadrant is left empty; with 4
+     * every quadrant is occupied.
+     *
+     * For 3+ windows the grid is governed by a single cross point (cfg.quad.cx,
+     * cfg.quad.cy). Every quadrant shares that point, so moving it grows one
+     * window diagonally and shrinks the others to match (see adjustQuadrant and
+     * "Focus-relative resizing / quadrant" in CLAUDE.md). At 2 windows only the
+     * vertical split (cfg.quad.split) applies.
+     *
+     * A 5th+ window never reaches this function as a tile — addWindow floats and
+     * cascades overflow windows in the centre. If a layout switch ever leaves
+     * >4 windows tiled here, the extras keep their prior geometry (untouched).
+     */
+    "quadrant": function(windows, area, cfg) {
+        const n = windows.length;
+        if (n === 0) return;
+
+        const og = cfg.outerGap;
+        const g  = cfg.gap;
+        const X = area.x + og, Y = area.y + og;
+        const W = area.width - og * 2, H = area.height - og * 2;
+
+        if (n === 1) {                            // fullscreen
+            windows[0].frameGeometry = rect(X, Y, W, H);
+            return;
+        }
+
+        if (n === 2) {                            // half and half (left / right)
+            const split = cfg.quad.split;
+            const lw = Math.floor((W - g) * split);
+            const rw = (W - g) - lw;
+            windows[0].frameGeometry = rect(X, Y, lw, H);
+            windows[1].frameGeometry = rect(X + lw + g, Y, rw, H);
+            return;
+        }
+
+        // n >= 3: 2x2 grid split at the shared cross point. Slots, in the order
+        // windows fill them: 0 = TL, 1 = TR, 2 = BR, 3 = BL. With 3 windows the
+        // BL slot stays empty; the cross still governs the other three.
+        const cx = cfg.quad.cx, cy = cfg.quad.cy;
+        const leftW  = Math.floor((W - g) * cx);
+        const rightW = (W - g) - leftW;
+        const topH   = Math.floor((H - g) * cy);
+        const botH   = (H - g) - topH;
+
+        const xL = X, xR = X + leftW + g;
+        const yT = Y, yB = Y + topH + g;
+
+        windows[0].frameGeometry = rect(xL, yT, leftW,  topH);   // TL
+        windows[1].frameGeometry = rect(xR, yT, rightW, topH);   // TR
+        windows[2].frameGeometry = rect(xR, yB, rightW, botH);   // BR
+        if (n >= 4)                                              // BL (empty at n===3)
+            windows[3].frameGeometry = rect(xL, yB, leftW, botH);
+    },
+
 };
 
 // ─── Focus-relative sizing (session-only) ─────────────────────────────────────
@@ -533,7 +591,39 @@ function ensureSpiralRatios(state, cutCount) {
     return cur;
 }
 
+// quadrant grid state (session-only, like the weights above). The 2x2 grid is
+// driven by a single grown window (`g`, a slot index 0..3, or -1 for none) and
+// how far it's grown (`a`, 0..QUAD_AMAX); `split` is the vertical split used at
+// n===2 only. Rebuilt to an even grid whenever the visible-window count changes,
+// since the slot a window occupies (and thus which one is grown) depends on it.
+function ensureQuad(state, n) {
+    const q = state.quad;
+    if (!q || q.n !== n) {
+        state.quad = { n: n, g: -1, a: 0, split: 0.5 };
+    }
+    return state.quad;
+}
+
+// The cross point for a grown slot `g` displaced by amount `a`. Each slot pushes
+// the cross diagonally toward its own screen corner's opposite, so the grown
+// window expands from its corner and its diagonal opposite shrinks in step:
+//   0 TL → (+,+)   1 TR → (-,+)   2 BR → (-,-)   3 BL → (+,-)
+// g === -1 (nothing grown) leaves the cross centred (a is 0 then anyway).
+function quadCross(g, a) {
+    const sx = (g === 0 || g === 3) ? 1 : (g === 1 || g === 2) ? -1 : 0;
+    const sy = (g === 0 || g === 1) ? 1 : (g === 2 || g === 3) ? -1 : 0;
+    return { cx: 0.5 + sx * a, cy: 0.5 + sy * a };
+}
+
 // ─── Tile trigger ───────────────────────────────────────────────────────────
+
+// Windows that actually occupy a slot right now. Minimized windows keep their
+// place in `state.windows` (so un-minimizing restores their slot) but are never
+// drawn — so anything that reasons about how many windows are *shown* (the
+// quadrant 4-slot cap, in particular) must count these, not the raw list.
+function visibleWindows(state) {
+    return state.windows.filter((w) => !w.minimized);
+}
 
 function tile(window) {
     const state = getState(window);
@@ -547,7 +637,23 @@ function tile(window) {
     // restores their place) but must not occupy layout space — the remaining
     // windows reflow to fill it. Filtering also promotes the next window to
     // master when the master is minimized.
-    const visible = state.windows.filter((w) => !w.minimized);
+    const visible = visibleWindows(state);
+
+    // Quadrant tiles at most four windows. If more than four are visible (e.g.
+    // a minimized window was restored into an already-full grid), evict the
+    // extras to the floating cascade so the grid never tries to cram >4 windows
+    // into 4 slots. The first four in tile order keep the quadrants.
+    if (state.layout === "quadrant" && visible.length > 4) {
+        for (let i = visible.length - 1; i >= 4; i--) {
+            const extra = visible[i];
+            const idx = state.windows.indexOf(extra);
+            if (idx !== -1) state.windows.splice(idx, 1);
+            extra.keepBelow = false;
+            if (CONFIG.noBorderTiling && extra.noBorder) extra.noBorder = false;
+            floatCascade(extra, state);
+        }
+        visible.length = 4;
+    }
 
     // Merge per-state ratios into the config passed to the layout: masterRatio
     // (master-stack/spiral split) and spotlightCornerRatio (spotlight corner
@@ -565,6 +671,10 @@ function tile(window) {
         layoutCfg.stackWeights = ensureWeights(state, "master-stack", Math.max(0, n - 1));
     } else if (state.layout === "spiral") {
         layoutCfg.spiralRatios = ensureSpiralRatios(state, Math.max(0, n - 1));
+    } else if (state.layout === "quadrant") {
+        const q = ensureQuad(state, n);
+        const cross = quadCross(q.g, q.a);
+        layoutCfg.quad = { cx: cross.cx, cy: cross.cy, split: q.split };
     }
 
     const layoutFn  = layouts[state.layout] || layouts["master-stack"];
@@ -614,16 +724,50 @@ function applyStacking(state, visible) {
 
 // ─── Window lifecycle ────────────────────────────────────────────────────────
 
+// Float a window in the centre of its screen, cascading each successive overflow
+// window by a fixed offset so they don't stack exactly. Used by the quadrant
+// layout, which only tiles four windows — any beyond that float here (see the
+// overflow branch in addWindow). The window is deliberately NOT added to
+// state.windows: it stays a normal free-floating window the user can move, and
+// retiling never touches it. `cascadeCount` wraps so the pile never marches off
+// screen; it's reset when the grid drops back below four windows (removeWindow).
+function floatCascade(window, state) {
+    const area = workspace.clientArea(KWin.PlacementArea, window);
+    const cw = Math.floor(area.width  * 0.6);
+    const ch = Math.floor(area.height * 0.6);
+    const step = 40;
+    const k = (state.cascadeCount || 0) % 5;                 // 0..4, then wrap
+    const x = area.x + Math.floor((area.width  - cw) / 2) + (k - 2) * step;
+    const y = area.y + Math.floor((area.height - ch) / 2) + (k - 2) * step;
+    window.frameGeometry = rect(x, y, cw, ch);
+    state.cascadeCount = (state.cascadeCount || 0) + 1;
+    showOsd("PlasmaFlow: floating (quadrant is full)");
+}
+
 function addWindow(window) {
     if (shouldFloat(window)) return;
 
     const state = getState(window);
     if (!state) return;
 
-    if (!state.windows.includes(window)) {
-        state.windows.push(window);
+    if (state.windows.includes(window)) {
+        tile(window);
+        return;
     }
 
+    // The quadrant layout draws at most four windows (one per quadrant). A new
+    // window opened while all four visible slots are taken floats and cascades in
+    // the centre instead of tiling. We count *visible* windows, not the raw list:
+    // minimized windows keep their slot but aren't drawn, so they must not make
+    // the grid read as full (that was the "only 3 tile" bug). Existing tiled
+    // windows are never evicted.
+    if (state.layout === "quadrant" && !window.minimized &&
+        visibleWindows(state).length >= 4) {
+        floatCascade(window, state);
+        return;
+    }
+
+    state.windows.push(window);
     tile(window);
 }
 
@@ -635,6 +779,10 @@ function removeWindow(window) {
             state.windows.splice(idx, 1);
             window.keepBelow = false;   // never leave a spotlight master stuck below
             if (CONFIG.noBorderTiling && window.noBorder) window.noBorder = false;  // restore decoration on leaving the tile list
+            // A freed quadrant slot means the next overflow window should cascade
+            // from the centre again, so reset the counter once we drop below four
+            // visible (matching the cap in tile()/addWindow).
+            if (visibleWindows(state).length < 4) state.cascadeCount = 0;
             // Retile remaining windows on this screen/desktop
             if (state.windows.length > 0) {
                 tile(state.windows[0]);
@@ -849,6 +997,7 @@ function adjustRatio(window, delta) {
         case "columns":      adjustColumn(window, state, delta);      break;
         case "master-stack": adjustStack(window, state, delta);       break;
         case "spiral":       adjustSpiral(window, state, delta);      break;
+        case "quadrant":     adjustQuadrant(window, state, delta);    break;
         // monocle: no size knob — no-op.
     }
 }
@@ -939,6 +1088,60 @@ function adjustSpiral(window, state, delta) {
     const pct    = Math.round(ratios[cut] * 100);
     const filled = Math.round(ratios[cut] * 10);
     showOsd(`PlasmaFlow  ${ratioBar(filled)}  ${pct}%`);
+}
+
+// quadrant grid amount step and cap. The cap keeps the cross off the edges so
+// no quadrant vanishes: cx/cy stay within [0.5-AMAX, 0.5+AMAX] = [0.1, 0.9].
+const QUAD_STEP = 0.05;
+const QUAD_AMAX = 0.40;
+
+// quadrant: grow (+) / shrink (-) the focused window along its diagonal. There's
+// one shared cross point, so only one window can be "grown" at a time. Growing a
+// window that isn't the current grown one first pulls the grid back toward even
+// (shrinking whatever is largest), and only once even does it start growing the
+// focused window — exactly the behaviour the layout spec calls for. Shrinking a
+// window is the same as growing its diagonal opposite, so we fold Meta+H into the
+// same path. At 2 windows there's no diagonal; we adjust the vertical split
+// instead. At 1 window (fullscreen) there's nothing to resize.
+function adjustQuadrant(window, state, delta) {
+    const t = visibleTile(state, window);
+    if (t.index < 0) return;
+
+    const n = t.visible.length;
+    if (n < 2) return;                     // fullscreen: nothing to trade with
+    const q = ensureQuad(state, n);
+
+    if (n === 2) {                         // vertical split: grow left / right
+        const dir = (t.index === 0) ? 1 : -1;
+        const MIN = 0.1, MAX = 0.9;
+        q.split = Math.min(MAX, Math.max(MIN,
+            Math.round((q.split + dir * delta) * 100) / 100));
+        tile(window);
+        const share  = (t.index === 0) ? q.split : 1 - q.split;
+        showOsd(`PlasmaFlow  width ${ratioBar(Math.round(share * 10))}  ${Math.round(share * 100)}%`);
+        return;
+    }
+
+    // n >= 3: diagonal grow. Shrinking a window == growing its diagonal opposite,
+    // so map Meta+H onto the grow path against the opposite slot ((slot+2)%4).
+    let slot = t.index;
+    if (delta < 0) slot = (slot + 2) % 4;
+    const step = Math.abs(delta) || QUAD_STEP;
+
+    if (q.a <= 0) {                        // even → start growing this window
+        q.g = slot;
+        q.a = step;
+    } else if (slot === q.g) {             // already the grown one → grow further
+        q.a = Math.min(QUAD_AMAX, q.a + step);
+    } else {                               // a different window → shrink largest to even first
+        q.a -= step;
+        if (q.a <= 0) { q.g = slot; q.a = -q.a; }   // reached even; carry the overshoot into the new window
+    }
+    tile(window);
+
+    // OSD: the grown window's linear share of its axis (0.5 even → up to 0.9).
+    const share = 0.5 + q.a;
+    showOsd(`PlasmaFlow  quad ${ratioBar(Math.round(share * 10))}  ${Math.round(share * 100)}%`);
 }
 
 // Build the 10-segment OSD ratio bar. Uses colour-emoji squares (🟦 filled /

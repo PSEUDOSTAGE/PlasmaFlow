@@ -52,12 +52,14 @@ master-stack: one master + a stack column.
 columns: equal vertical columns.
 monocle: one fullscreen window at a time.
 spotlight: master fullscreen, others in the corners.
-spiral: Fibonacci spiral; split fraction follows master width.</string></property>
+spiral: Fibonacci spiral; split fraction follows master width.
+quadrant: 2x2 grid (fills TL, TR, BR, BL); Meta+H/L grows a window diagonally.</string></property>
         <item><property name="text"><string>master-stack</string></property></item>
         <item><property name="text"><string>columns</string></property></item>
         <item><property name="text"><string>monocle</string></property></item>
         <item><property name="text"><string>spotlight</string></property></item>
         <item><property name="text"><string>spiral</string></property></item>
+        <item><property name="text"><string>quadrant</string></property></item>
        </widget>
       </item>
      </layout>
