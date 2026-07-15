@@ -57,18 +57,19 @@ make package
 | Shortcut       | Action                          |
 |----------------|---------------------------------|
 | Meta + T       | Cycle layout                    |
-| Meta + Return  | Swap focused window with master |
-| Meta + J       | Focus next window               |
-| Meta + K       | Focus previous window           |
-| Meta + Ctrl + J | Move focused window down in tile order |
-| Meta + Ctrl + K | Move focused window up in tile order   |
+| Meta + M       | Mirror the layout horizontally  |
+| Meta + G       | Swap focused window with master |
+| Meta + K       | Focus next window               |
+| Meta + J       | Focus previous window           |
+| Meta + Ctrl + K | Move focused window down in tile order |
+| Meta + Ctrl + J | Move focused window up in tile order   |
 | Meta + Left    | Send focused window to previous desktop |
 | Meta + Right   | Send focused window to next desktop     |
 | Meta + Ctrl + Space | Park focused window in the scratchpad |
 | Meta + Space   | Summon / dismiss the scratchpad |
 | Meta + F       | Toggle float (also ejects a summoned scratchpad window into tiling) |
-| Meta + L       | Grow the focused window (master-stack/columns/spiral, quadrant diagonally) or corner size (spotlight) |
-| Meta + H       | Shrink the focused window (master-stack/columns/spiral, quadrant diagonally) or corner size (spotlight) |
+| Meta + L       | Grow the focused window (master-stack/columns/spiral, quadrant diagonally, monocle slot) or corner size (spotlight) |
+| Meta + H       | Shrink the focused window (master-stack/columns/spiral, quadrant diagonally, monocle slot) or corner size (spotlight) |
 
 Shortcuts can be rebound in **System Settings → Shortcuts → KWin Scripts**.
 
@@ -83,7 +84,7 @@ Shortcuts can be rebound in **System Settings → Shortcuts → KWin Scripts**.
 > These avoid the grave/tilde key, whose shifted keysym can't fire a script shortcut under Wayland. If **Meta+Space** is bound to something else on your system (e.g. a custom KRunner or keyboard-layout-switch binding), clear it in **System Settings → Keyboard → Shortcuts**.
 
 > **⚠️ Meta+L is KDE's default "Lock Screen" shortcut.**
-> PlasmaFlow uses it to *grow the focused window* (master-stack / columns / spiral) or *corner size* (spotlight), so out of the box pressing it will lock the screen instead. To free it up: **System Settings → Keyboard → Shortcuts**, search **`Lock Screen`** (the *Screen Locking* action), click its **Meta+L** chip and clear it, then **Apply** — re-bind locking to another key first if you still want a lock shortcut.
+> PlasmaFlow uses it to *grow the focused window* (master-stack / columns / spiral / quadrant / monocle) or *corner size* (spotlight), so out of the box pressing it will lock the screen instead. To free it up: **System Settings → Keyboard → Shortcuts**, search **`Lock Screen`** (the *Screen Locking* action), click its **Meta+L** chip and clear it, then **Apply** — re-bind locking to another key first if you still want a lock shortcut.
 
 ---
 
@@ -99,7 +100,7 @@ Left master pane, right stack column. 1 window fills the screen. Default 50/50 s
 Equal-width vertical columns. Great for wide monitors. **Meta+H/L** grow/shrink the **focused** column's width.
 
 ### monocle
-All windows fullscreen, stacked. Cycle focus with Meta+J/K.
+All windows share one slot, stacked; only the focused one shows. Cycle focus with Meta+J/K. **Meta+H/L** shrink/grow that shared slot and re-centre it, so the focused window pulls toward screen centre with wallpaper margin around it (default is full-screen — nothing changes until you press Meta+H). The scale is per-desktop and remembered across logout.
 
 ### spotlight
 Master fills the entire screen, kept behind the corner windows so it never covers them when focused. Stack windows sit in the corners, clockwise from bottom-right: BR → TR → TL → BL. More than 4 stack windows overflow into a second layer, scaled down by 70%, sitting behind the first. Corner size is configurable (default 38% of screen dimensions) and can be adjusted on the fly with **Meta+H/L**.

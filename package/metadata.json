@@ -7,7 +7,7 @@
             }
         ],
         "Description": "A Wayland-first dynamic tiling script for KDE Plasma 6.4+. Supports master/stack, columns, and floating layouts with per-app rules and gap control.",
-        "Icon": "plasma-flow",
+        "Icon": "plasmaflow",
         "Id": "plasma-flow",
         "License": "GPL-3.0",
         "Name": "PlasmaFlow",
