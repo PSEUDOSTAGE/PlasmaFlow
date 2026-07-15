@@ -147,12 +147,13 @@ function showOsd(text) {
  */
 function persistState(key, state) {
     if (!CONFIG.persistSession) return;
-    // 4-field format "layout|masterRatio|cornerRatio|mirrored" (mirror as 1/0).
-    // mirrored was appended exactly like cornerRatio was — a literal 0/1, so the
-    // "value is fully script-controlled, no escaping needed" safety argument still
-    // holds. restoreState reads legacy 2- and 3-field entries too (missing tail
-    // fields fall back to defaults), so old kwinrc entries keep loading.
-    const value = `${state.layout}|${state.masterRatio}|${state.cornerRatio}|${state.mirrored ? 1 : 0}`;
+    // 5-field format "layout|masterRatio|cornerRatio|mirrored|monocleScale"
+    // (mirror as 1/0). monocleScale was appended exactly like mirrored/cornerRatio
+    // before it — a rounded number, so the "value is fully script-controlled, no
+    // escaping needed" safety argument still holds. restoreState reads legacy 2-,
+    // 3-, and 4-field entries too (missing tail fields fall back to defaults), so
+    // old kwinrc entries keep loading.
+    const value = `${state.layout}|${state.masterRatio}|${state.cornerRatio}|${state.mirrored ? 1 : 0}|${state.monocleScale}`;
     if (persistedCache[key] === value) return;
     persistedCache[key] = value;
     // key and value are fully script-controlled (screen int, desktop UUID, a
@@ -167,11 +168,13 @@ function persistState(key, state) {
 /**
  * Restore a previously saved layout+ratios for a desktop key, if any.
  * Reads straight from kwinrc via the global readConfig() (same group persistState
- * writes to). Returns { layout, masterRatio, cornerRatio?, mirrored? } or null.
- * Accepts the legacy 2-field ("layout|masterRatio") and 3-field
- * ("layout|masterRatio|cornerRatio") formats as well as the current 4-field one
- * ("layout|masterRatio|cornerRatio|mirrored"); missing tail fields fall back to
- * their defaults (cornerRatio at the call site, mirrored via getState's || false).
+ * writes to). Returns { layout, masterRatio, cornerRatio?, mirrored?,
+ * monocleScale? } or null. Accepts the legacy 2-field ("layout|masterRatio"),
+ * 3-field ("layout|masterRatio|cornerRatio"), and 4-field
+ * ("layout|masterRatio|cornerRatio|mirrored") formats as well as the current
+ * 5-field one ("layout|masterRatio|cornerRatio|mirrored|monocleScale"); missing
+ * tail fields fall back to their defaults (cornerRatio at the call site, mirrored
+ * and monocleScale via getState's || default).
  */
 function restoreState(key) {
     if (!CONFIG.persistSession) return null;
@@ -190,6 +193,12 @@ function restoreState(key) {
     // 4th field: horizontal mirror, "1"/"0". Absent for legacy entries → leave
     // undefined so getState's `|| false` default applies.
     if (parts.length >= 4) result.mirrored = (parts[3] === "1");
+    // 5th field: monocle slot scale (0.1–1.0). Absent for legacy 2-/3-/4-field
+    // entries → leave undefined so getState's `|| MONOCLE_SCALE_DEFAULT` applies.
+    if (parts.length >= 5) {
+        const ms = parseFloat(parts[4]);
+        if (!isNaN(ms)) result.monocleScale = ms;
+    }
     return result;
 }
 
@@ -232,10 +241,11 @@ function getState(window) {
             // Persisted as the 4th field; restoreState sets `saved.mirrored` when
             // present (legacy 2-/3-field entries leave it undefined → false).
             mirrored:     (saved && saved.mirrored) || false,
-            // monocle slot scale (Meta+H/L), per-desktop like masterRatio. Always
-            // 1.0 on init in Milestone 1 (session-only); Milestone 2 will read it
-            // from `saved`. Default 1.0 == full-screen, so no behaviour change.
-            monocleScale: MONOCLE_SCALE_DEFAULT,
+            // monocle slot scale (Meta+H/L), per-desktop like masterRatio.
+            // Persisted as the 5th field; restoreState sets `saved.monocleScale`
+            // when present (legacy 2-/3-/4-field entries leave it undefined →
+            // MONOCLE_SCALE_DEFAULT). Default 1.0 == full-screen, no behaviour change.
+            monocleScale: (saved && saved.monocleScale) || MONOCLE_SCALE_DEFAULT,
             windows:      [],
         };
     }
@@ -1290,9 +1300,8 @@ function adjustCornerRatio(window, state, delta) {
 // monocle: grow (+) / shrink (-) the shared full-screen slot, re-centred. One
 // per-desktop scale in [MONOCLE_SCALE_MIN, MONOCLE_SCALE_MAX]; only the focused
 // (top-most) window is visible, so this reads as resizing it. No-op if the
-// focused window isn't tiled here (e.g. it's floating). Persists from Milestone 1
-// onward (staged like toggleMirror) — the call writes the existing fields until
-// Milestone 2 extends the storage format to carry monocleScale.
+// focused window isn't tiled here (e.g. it's floating). Persists across logout via
+// persistState — monocleScale is the 5th field of the pipe-delimited persist string.
 function adjustMonocle(window, state, delta) {
     const t = visibleTile(state, window);
     if (t.index < 0) return;
