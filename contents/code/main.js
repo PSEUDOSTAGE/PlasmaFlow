@@ -77,6 +77,19 @@ const layoutState = {};
 // (never tiled) and are summoned/dismissed together with Meta+Grave.
 const scratchWindows = [];
 
+// monocle scale bounds. A single per-desktop fraction sizing the shared monocle
+// slot down from full-screen and re-centring it. Default 1.0 == full-screen, so
+// there's no behaviour change until the user presses Meta+H. The step reuses
+// CONFIG.masterRatioStep (0.05), the same fraction step the other knobs use — no
+// new config entry (default 1.0 means "no change", nothing worth presetting).
+// Declared up here, not down with the other resize constants: getState() reads
+// MONOCLE_SCALE_DEFAULT and a `const` is in its temporal dead zone until the
+// declaration is evaluated, so any call reaching getState() before that point
+// would throw a ReferenceError and silently abort the whole script.
+const MONOCLE_SCALE_DEFAULT = 1.0;
+const MONOCLE_SCALE_MIN     = 0.1;
+const MONOCLE_SCALE_MAX     = 1.0;
+
 // ─── Session persistence ────────────────────────────────────────────────────
 //
 // We persist each desktop's layout + masterRatio so they survive logout.
@@ -1190,15 +1203,6 @@ function adjustSpiral(window, state, delta) {
 // no quadrant vanishes: cx/cy stay within [0.5-AMAX, 0.5+AMAX] = [0.1, 0.9].
 const QUAD_STEP = 0.05;
 const QUAD_AMAX = 0.40;
-
-// monocle scale bounds. A single per-desktop fraction sizing the shared monocle
-// slot down from full-screen and re-centring it. Default 1.0 == full-screen, so
-// there's no behaviour change until the user presses Meta+H. The step reuses
-// CONFIG.masterRatioStep (0.05), the same fraction step the other knobs use — no
-// new config entry (default 1.0 means "no change", nothing worth presetting).
-const MONOCLE_SCALE_DEFAULT = 1.0;
-const MONOCLE_SCALE_MIN     = 0.1;
-const MONOCLE_SCALE_MAX     = 1.0;
 
 // quadrant: grow (+) / shrink (-) the focused window along its diagonal. There's
 // one shared cross point, so only one window can be "grown" at a time. Growing a
