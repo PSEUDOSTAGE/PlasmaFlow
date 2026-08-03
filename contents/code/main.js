@@ -22,6 +22,30 @@ function normalizeLayoutName(value) {
     return "master-stack";
 }
 
+// Which layouts Meta+T cycles through. One Bool config entry per layout so the
+// KCM can show plain checkboxes; collected here into a list in LAYOUT_NAMES
+// order (the cycle order). Disabling a layout only removes it from the Meta+T
+// rotation — Meta+Shift+T, a pinned desktop layout, the default layout and a
+// restored session layout all still reach it, so nothing a user explicitly
+// asked for is blocked by a checkbox.
+const LAYOUT_ENABLE_KEYS = {
+    "master-stack": "enableMasterStack",
+    "columns":      "enableColumns",
+    "monocle":      "enableMonocle",
+    "spotlight":    "enableSpotlight",
+    "spiral":       "enableSpiral",
+    "quadrant":     "enableQuadrant",
+};
+
+function readEnabledLayouts() {
+    const on = LAYOUT_NAMES.filter(
+        name => readConfig(LAYOUT_ENABLE_KEYS[name], true)
+    );
+    // Unticking every box would leave Meta+T with nothing to cycle; treat that
+    // degenerate case as "all enabled" rather than making the key dead.
+    return on.length ? on : LAYOUT_NAMES.slice();
+}
+
 // Model B: parse "1=master-stack,2=columns" into { "1": "master-stack", ... }.
 function parseDesktopLayouts(raw) {
     const map = {};
@@ -50,6 +74,8 @@ function loadConfig() {
         floatClasses:         readConfig("floatClasses",
             "steam,plasmashell,krunner,yakuake,spectacle,kruler,plasma-desktop"
         ).split(",").map(s => s.trim().toLowerCase()),
+        // Layouts Meta+T rotates through (Meta+Shift+T ignores this).
+        enabledLayouts:       readEnabledLayouts(),
         // Meta+T overrides the pinned layout for the session only.
         desktopLayouts:       parseDesktopLayouts(readConfig("desktopLayouts", "")),
     };
@@ -76,6 +102,19 @@ const layoutState = {};
 // Windows parked in the scratchpad. They live outside the tile layout entirely
 // (never tiled) and are summoned/dismissed together with Meta+Grave.
 const scratchWindows = [];
+
+// monocle scale bounds. A single per-desktop fraction sizing the shared monocle
+// slot down from full-screen and re-centring it. Default 1.0 == full-screen, so
+// there's no behaviour change until the user presses Meta+H. The step reuses
+// CONFIG.masterRatioStep (0.05), the same fraction step the other knobs use — no
+// new config entry (default 1.0 means "no change", nothing worth presetting).
+// Declared up here, not down with the other resize constants: getState() reads
+// MONOCLE_SCALE_DEFAULT and a `const` is in its temporal dead zone until the
+// declaration is evaluated, so any call reaching getState() before that point
+// would throw a ReferenceError and silently abort the whole script.
+const MONOCLE_SCALE_DEFAULT = 1.0;
+const MONOCLE_SCALE_MIN     = 0.1;
+const MONOCLE_SCALE_MAX     = 1.0;
 
 // ─── Session persistence ────────────────────────────────────────────────────
 //
@@ -123,14 +162,18 @@ function plasmaEval(script) {
 // no-op if plasmashell is down, since the OSD is purely informational.
 //
 // The icon arg can be either an icon-*theme name* or an absolute *file path*.
-// We default to the theme name "plasma-flow" (portable; the Makefile installs
-// the PNG into hicolor). BUT on this build plasmashell's OSD does NOT reliably
-// resolve a freshly-installed hicolor name by theme name in a running session —
-// stock names work, ours showed a fallback — whereas it loads an absolute path
-// fine. So `make install` rewrites OSD_ICON (the @OSD_ICON@-tagged line below)
-// to the absolute path of the installed PNG. Source stays distributable; the
-// installed copy points at the real file. See CLAUDE.md "OSD icon".
-const OSD_ICON = "plasma-flow"; /* @OSD_ICON@ */
+// We default to the theme name "plasmaflow" (portable; the Makefile installs the
+// PNG into hicolor as plasmaflow.png). The name is deliberately DASH-FREE: an
+// earlier "plasma-flow" was invisible everywhere theme-name lookup is used (OSD,
+// KWin Scripts list) because Qt6's freedesktop dash-fallback strips it to the
+// parent "plasma" — a real Breeze icon that outranks our file in the lower-
+// priority user hicolor theme. So "plasma-flow" always resolved to the stock
+// Plasma logo. A no-dash name has no such parent and resolves to our file.
+// (See CLAUDE.md "OSD icon" / "icon name must be dash-free".)
+// `make install` still rewrites OSD_ICON (the @OSD_ICON@-tagged line below) to
+// the absolute installed path, which sidesteps theme lookup entirely; the source
+// keeps the portable theme name so the distributed zip works without make.
+const OSD_ICON = "plasmaflow"; /* @OSD_ICON@ */
 function showOsd(text) {
     if (typeof callDBus !== "function") return;
     callDBus("org.kde.plasmashell", "/org/kde/osdService",
@@ -143,7 +186,13 @@ function showOsd(text) {
  */
 function persistState(key, state) {
     if (!CONFIG.persistSession) return;
-    const value = `${state.layout}|${state.masterRatio}|${state.cornerRatio}`;
+    // 5-field format "layout|masterRatio|cornerRatio|mirrored|monocleScale"
+    // (mirror as 1/0). monocleScale was appended exactly like mirrored/cornerRatio
+    // before it — a rounded number, so the "value is fully script-controlled, no
+    // escaping needed" safety argument still holds. restoreState reads legacy 2-,
+    // 3-, and 4-field entries too (missing tail fields fall back to defaults), so
+    // old kwinrc entries keep loading.
+    const value = `${state.layout}|${state.masterRatio}|${state.cornerRatio}|${state.mirrored ? 1 : 0}|${state.monocleScale}`;
     if (persistedCache[key] === value) return;
     persistedCache[key] = value;
     // key and value are fully script-controlled (screen int, desktop UUID, a
@@ -158,10 +207,13 @@ function persistState(key, state) {
 /**
  * Restore a previously saved layout+ratios for a desktop key, if any.
  * Reads straight from kwinrc via the global readConfig() (same group persistState
- * writes to). Returns { layout, masterRatio, cornerRatio? } or null.
- * Accepts both the legacy 2-field format ("layout|masterRatio") and the current
- * 3-field one ("layout|masterRatio|cornerRatio"); a missing cornerRatio falls
- * back to the config default at the call site.
+ * writes to). Returns { layout, masterRatio, cornerRatio?, mirrored?,
+ * monocleScale? } or null. Accepts the legacy 2-field ("layout|masterRatio"),
+ * 3-field ("layout|masterRatio|cornerRatio"), and 4-field
+ * ("layout|masterRatio|cornerRatio|mirrored") formats as well as the current
+ * 5-field one ("layout|masterRatio|cornerRatio|mirrored|monocleScale"); missing
+ * tail fields fall back to their defaults (cornerRatio at the call site, mirrored
+ * and monocleScale via getState's || default).
  */
 function restoreState(key) {
     if (!CONFIG.persistSession) return null;
@@ -176,6 +228,15 @@ function restoreState(key) {
     if (parts.length >= 3) {
         const cr = parseFloat(parts[2]);
         if (!isNaN(cr)) result.cornerRatio = cr;
+    }
+    // 4th field: horizontal mirror, "1"/"0". Absent for legacy entries → leave
+    // undefined so getState's `|| false` default applies.
+    if (parts.length >= 4) result.mirrored = (parts[3] === "1");
+    // 5th field: monocle slot scale (0.1–1.0). Absent for legacy 2-/3-/4-field
+    // entries → leave undefined so getState's `|| MONOCLE_SCALE_DEFAULT` applies.
+    if (parts.length >= 5) {
+        const ms = parseFloat(parts[4]);
+        if (!isNaN(ms)) result.monocleScale = ms;
     }
     return result;
 }
@@ -215,6 +276,15 @@ function getState(window) {
             masterRatio,
             cornerRatio,                    // spotlight corner size, adjustable via Meta+H/L
             pinnedLayout: pinned || null,   // track so cycleLayout can mark it overridden
+            // Horizontal mirror (Meta+M), per-screen/per-desktop like `layout`.
+            // Persisted as the 4th field; restoreState sets `saved.mirrored` when
+            // present (legacy 2-/3-field entries leave it undefined → false).
+            mirrored:     (saved && saved.mirrored) || false,
+            // monocle slot scale (Meta+H/L), per-desktop like masterRatio.
+            // Persisted as the 5th field; restoreState sets `saved.monocleScale`
+            // when present (legacy 2-/3-/4-field entries leave it undefined →
+            // MONOCLE_SCALE_DEFAULT). Default 1.0 == full-screen, no behaviour change.
+            monocleScale: (saved && saved.monocleScale) || MONOCLE_SCALE_DEFAULT,
             windows:      [],
         };
     }
@@ -250,6 +320,36 @@ function shouldFloat(window) {
 // build all geometry through this helper so there's a single place to adjust.
 function rect(x, y, width, height) {
     return { x: x, y: y, width: width, height: height };
+}
+
+// ─── Horizontal mirror ────────────────────────────────────────────────────────
+//
+// Module-level mirror context. When set to an `area`, setGeometry() reflects
+// every window it writes horizontally about that area's vertical centre line.
+// tile() sets this to the usable area for a mirrored desktop just before the
+// layout runs and clears it immediately after (so floatCascade and everything
+// else are unaffected). Default off — non-mirrored desktops render identically.
+//
+// Reflecting at WRITE time, from the intended x/width the layout passes in, is
+// deliberate. The obvious alternative — a post-pass that reads each window's
+// frameGeometry back and re-flips it — is subtly broken on Wayland: a window
+// that is mid-resize does NOT reliably report the width you just requested until
+// it finishes, so the reflection was computed from a *stale* width and the window
+// jumped to the wrong x on every Meta+H/L resize (the mirror appeared to "break").
+// The layout's intended geometry is always exact, so reflecting it here is stable.
+let activeMirror = null;
+
+// Write a window's geometry, reflecting it horizontally first when a mirror is
+// active. Layouts call this instead of assigning frameGeometry directly so the
+// reflection uses their intended x/width — never a read-back. width and y are
+// untouched, so a window's SIZE is mirror-invariant: focus-relative resize,
+// focus/move/swap, float and scratchpad all reason about size and tile-order,
+// never absolute x, so they keep working under mirror for free. The reflection
+// (newX = 2*ax + aw - x - w) is its own inverse, so two Meta+M presses restore
+// the exact original geometry.
+function setGeometry(win, x, y, w, h) {
+    if (activeMirror) x = 2 * activeMirror.x + activeMirror.width - x - w;
+    win.frameGeometry = rect(x, y, w, h);
 }
 
 // Build an array of length n filled with v. Used for uniform default size
@@ -292,7 +392,7 @@ const layouts = {
         const ratio = cfg.masterRatio;
 
         if (windows.length === 1) {
-            windows[0].frameGeometry = rect(
+            setGeometry(windows[0],
                 area.x + og,
                 area.y + og,
                 area.width  - og * 2,
@@ -315,7 +415,7 @@ const layouts = {
         const heights  = weightedSizes(weights, usableH);
 
         // Master
-        windows[0].frameGeometry = rect(
+        setGeometry(windows[0],
             area.x + og,
             area.y + og,
             masterWidth,
@@ -325,7 +425,7 @@ const layouts = {
         // Stack
         let y = area.y + og;
         for (let i = 1; i < windows.length; i++) {
-            windows[i].frameGeometry = rect(
+            setGeometry(windows[i],
                 area.x + og + masterWidth + g,
                 y,
                 stackWidth,
@@ -355,7 +455,7 @@ const layouts = {
 
         let x = area.x + og;
         for (let i = 0; i < n; i++) {
-            windows[i].frameGeometry = rect(
+            setGeometry(windows[i],
                 x,
                 area.y + og,
                 widths[i],
@@ -366,17 +466,25 @@ const layouts = {
     },
 
     /**
-     * monocle: all windows stacked fullscreen, focus switches between them.
+     * monocle: all windows share one slot; focus switches between them and only
+     * the top-most (focused) window shows. cfg.monocleScale (0.1–1.0, default 1.0)
+     * sizes that shared slot down from the usable area and re-centres it, so the
+     * visible window shrinks toward screen centre with wallpaper margin around it.
+     * At scale 1.0 this reduces exactly to the old full-screen slot (w === usableW,
+     * offsets 0), so the default is pixel-identical to before. The rect is
+     * horizontally symmetric, so Meta+M mirrors monocle onto itself (visual no-op).
      */
     "monocle": function(windows, area, cfg) {
-        const og = cfg.outerGap;
+        const og    = cfg.outerGap;
+        const scale = cfg.monocleScale || 1.0;
+        const usableW = area.width  - og * 2;
+        const usableH = area.height - og * 2;
+        const w = Math.floor(usableW * scale);
+        const h = Math.floor(usableH * scale);
+        const x = area.x + og + Math.floor((usableW - w) / 2);
+        const y = area.y + og + Math.floor((usableH - h) / 2);
         for (const win of windows) {
-            win.frameGeometry = rect(
-                area.x + og,
-                area.y + og,
-                area.width  - og * 2,
-                area.height - og * 2
-            );
+            setGeometry(win, x, y, w, h);
         }
     },
 
@@ -394,7 +502,7 @@ const layouts = {
         const cr   = cfg.spotlightCornerRatio;  // corner size as fraction of screen
 
         // Master always fills the entire usable area
-        windows[0].frameGeometry = rect(
+        setGeometry(windows[0],
             area.x + og,
             area.y + og,
             area.width  - og * 2,
@@ -442,7 +550,7 @@ const layouts = {
             const x = Math.max(area.x + og, Math.min(pos.x + inset, area.x + area.width  - og - cw));
             const y = Math.max(area.y + og, Math.min(pos.y + inset, area.y + area.height - og - ch));
 
-            stack[i].frameGeometry = rect(x, y, cw, ch);
+            setGeometry(stack[i], x, y, cw, ch);
         }
     },
 
@@ -472,7 +580,7 @@ const layouts = {
 
         for (let i = 0; i < windows.length; i++) {
             if (i === windows.length - 1) {       // last window fills the rest
-                windows[i].frameGeometry = rect(x, y, w, h);
+                setGeometry(windows[i], x, y, w, h);
                 break;
             }
 
@@ -481,19 +589,19 @@ const layouts = {
             const dir = i % 4;
             if (dir === 0) {                      // cut vertical, window left
                 const cut = Math.max(0, Math.floor((w - g) * ratio));
-                windows[i].frameGeometry = rect(x, y, cut, h);
+                setGeometry(windows[i], x, y, cut, h);
                 x += cut + g; w -= cut + g;
             } else if (dir === 1) {               // cut horizontal, window top
                 const cut = Math.max(0, Math.floor((h - g) * ratio));
-                windows[i].frameGeometry = rect(x, y, w, cut);
+                setGeometry(windows[i], x, y, w, cut);
                 y += cut + g; h -= cut + g;
             } else if (dir === 2) {               // cut vertical, window right
                 const cut = Math.max(0, Math.floor((w - g) * ratio));
-                windows[i].frameGeometry = rect(x + (w - cut), y, cut, h);
+                setGeometry(windows[i], x + (w - cut), y, cut, h);
                 w -= cut + g;
             } else {                              // cut horizontal, window bottom
                 const cut = Math.max(0, Math.floor((h - g) * ratio));
-                windows[i].frameGeometry = rect(x, y + (h - cut), w, cut);
+                setGeometry(windows[i], x, y + (h - cut), w, cut);
                 h -= cut + g;
             }
         }
@@ -525,7 +633,7 @@ const layouts = {
         const W = area.width - og * 2, H = area.height - og * 2;
 
         if (n === 1) {                            // fullscreen
-            windows[0].frameGeometry = rect(X, Y, W, H);
+            setGeometry(windows[0], X, Y, W, H);
             return;
         }
 
@@ -533,8 +641,8 @@ const layouts = {
             const split = cfg.quad.split;
             const lw = Math.floor((W - g) * split);
             const rw = (W - g) - lw;
-            windows[0].frameGeometry = rect(X, Y, lw, H);
-            windows[1].frameGeometry = rect(X + lw + g, Y, rw, H);
+            setGeometry(windows[0], X, Y, lw, H);
+            setGeometry(windows[1], X + lw + g, Y, rw, H);
             return;
         }
 
@@ -550,11 +658,11 @@ const layouts = {
         const xL = X, xR = X + leftW + g;
         const yT = Y, yB = Y + topH + g;
 
-        windows[0].frameGeometry = rect(xL, yT, leftW,  topH);   // TL
-        windows[1].frameGeometry = rect(xR, yT, rightW, topH);   // TR
-        windows[2].frameGeometry = rect(xR, yB, rightW, botH);   // BR
-        if (n >= 4)                                              // BL (empty at n===3)
-            windows[3].frameGeometry = rect(xL, yB, leftW, botH);
+        setGeometry(windows[0], xL, yT, leftW,  topH);   // TL
+        setGeometry(windows[1], xR, yT, rightW, topH);   // TR
+        setGeometry(windows[2], xR, yB, rightW, botH);   // BR
+        if (n >= 4)                                      // BL (empty at n===3)
+            setGeometry(windows[3], xL, yB, leftW, botH);
     },
 
 };
@@ -675,10 +783,21 @@ function tile(window) {
         const q = ensureQuad(state, n);
         const cross = quadCross(q.g, q.a);
         layoutCfg.quad = { cx: cross.cx, cy: cross.cy, split: q.split };
+    } else if (state.layout === "monocle") {
+        layoutCfg.monocleScale = state.monocleScale;
     }
 
     const layoutFn  = layouts[state.layout] || layouts["master-stack"];
+
+    // Horizontal mirror: when this desktop is mirrored, setGeometry reflects each
+    // window about `area`'s vertical centre as the layout writes it (using the
+    // intended x/width, so it's stable while a window is resizing — see
+    // activeMirror/setGeometry). Cleared immediately after the layout so nothing
+    // else (floatCascade, later retiles) is affected. Layouts stay pure — they
+    // just emit geometry through setGeometry and never see the mirror flag.
+    activeMirror = state.mirrored ? area : null;
     layoutFn(visible, area, layoutCfg);
+    activeMirror = null;
 
     applyStacking(state, visible);
     applyBorders(state);
@@ -794,23 +913,56 @@ function removeWindow(window) {
 
 // ─── Keyboard shortcuts ─────────────────────────────────────────────────────
 
-function cycleLayout(window) {
+// Next layout after `current`, walking LAYOUT_NAMES in order and skipping any
+// name not in `allowed`. Walking the *full* order (rather than indexing into
+// `allowed`) keeps the rotation stable when the current layout is itself
+// disabled — as it can be after Meta+Shift+T, a pin, or a restored session —
+// since a disabled current has no index in `allowed` to advance from.
+function nextLayout(current, allowed) {
+    const start = LAYOUT_NAMES.indexOf(current);
+    for (let i = 1; i <= LAYOUT_NAMES.length; i++) {
+        const name = LAYOUT_NAMES[(start + i) % LAYOUT_NAMES.length];
+        if (allowed.indexOf(name) !== -1) return name;
+    }
+    return current;
+}
+
+// Meta+T cycles the enabled layouts; Meta+Shift+T (includeDisabled) cycles all
+// of them, so a layout you've unticked is still reachable on demand.
+function cycleLayout(window, includeDisabled) {
     const state = getState(window);
     if (!state) return;
 
-    const keys = Object.keys(layouts);
-    const idx  = keys.indexOf(state.layout);
-    state.layout = keys[(idx + 1) % keys.length];
+    const allowed = includeDisabled ? LAYOUT_NAMES : CONFIG.enabledLayouts;
+    state.layout  = nextLayout(state.layout, allowed);
 
     tile(window);
     persistState(
         stateKey(window.screen, window.desktops[0].id),
         state
     );
-    // Mark as session-overridden if it differs from pinned layout
+    // Mark as session-overridden if it differs from pinned layout, and flag a
+    // layout that's off in the config (only reachable via Meta+Shift+T) so it's
+    // obvious why Meta+T won't come back to it.
     const overridden = state.pinnedLayout && state.layout !== state.pinnedLayout
         ? ` (pinned: ${state.pinnedLayout})` : "";
-    showOsd(`PlasmaFlow: ${state.layout}${overridden}`);
+    const off = CONFIG.enabledLayouts.indexOf(state.layout) === -1 ? " (disabled)" : "";
+    showOsd(`PlasmaFlow: ${state.layout}${off}${overridden}`);
+}
+
+// Toggle the horizontal mirror for the focused window's desktop. mirrored is
+// per-state, so this flips only this screen/desktop and leaves every other one
+// untouched; it also survives a layout change (mirror is an orientation
+// preference, not a per-layout setting). The persistState call is a harmless
+// no-op for the mirror bit in Milestone 1 (the persisted string doesn't carry
+// it yet) — wired now so Milestone 2 only extends the format, not the call site.
+function toggleMirror(window) {
+    const state = getState(window);
+    if (!state) return;
+    state.mirrored = !state.mirrored;
+    tile(window);
+    persistState(stateKey(window.screen, window.desktops[0].id), state);
+    showOsd("PlasmaFlow: mirror " + (state.mirrored ? "on" : "off"));
 }
 
 function swapWithMaster(window) {
@@ -985,9 +1137,10 @@ function toggleFloat(window) {
 // Meta+H/L resize the *focused* window relative to its neighbours, dispatched to
 // whatever the active layout supports: the focused column's width (columns), a
 // stack window's height or the master's width (master-stack), the focused
-// window's cut (spiral), or the corner size (spotlight). monocle has no knob, so
-// it's a silent no-op. `delta`'s sign is grow (+) / shrink (-); its magnitude is
-// the ratio step (masterRatioStep) for the fraction-based knobs.
+// window's cut (spiral), the diagonal grow (quadrant), the shared slot scale
+// (monocle), or the corner size (spotlight). `delta`'s sign is grow (+) /
+// shrink (-); its magnitude is the ratio step (masterRatioStep) for the
+// fraction-based knobs.
 function adjustRatio(window, delta) {
     const state = getState(window);
     if (!state) return;
@@ -998,7 +1151,7 @@ function adjustRatio(window, delta) {
         case "master-stack": adjustStack(window, state, delta);       break;
         case "spiral":       adjustSpiral(window, state, delta);      break;
         case "quadrant":     adjustQuadrant(window, state, delta);    break;
-        // monocle: no size knob — no-op.
+        case "monocle":      adjustMonocle(window, state, delta);     break;
     }
 }
 
@@ -1192,47 +1345,86 @@ function adjustCornerRatio(window, state, delta) {
     showOsd(`PlasmaFlow  corners ${ratioBar(filled)}  ${pct}%`);
 }
 
+// monocle: grow (+) / shrink (-) the shared full-screen slot, re-centred. One
+// per-desktop scale in [MONOCLE_SCALE_MIN, MONOCLE_SCALE_MAX]; only the focused
+// (top-most) window is visible, so this reads as resizing it. No-op if the
+// focused window isn't tiled here (e.g. it's floating). Persists across logout via
+// persistState — monocleScale is the 5th field of the pipe-delimited persist string.
+function adjustMonocle(window, state, delta) {
+    const t = visibleTile(state, window);
+    if (t.index < 0) return;
+
+    const MIN = MONOCLE_SCALE_MIN, MAX = MONOCLE_SCALE_MAX;
+    state.monocleScale = Math.min(MAX, Math.max(MIN,
+        Math.round((state.monocleScale + delta) * 100) / 100
+    ));
+
+    tile(window);
+    persistState(stateKey(window.screen, window.desktops[0].id), state);
+
+    // Normalize the bar over [MIN,MAX] so it spans the full width — otherwise the
+    // 0.1 floor would leave the bar looking almost empty at minimum. Same trick as
+    // adjustCornerRatio (which normalizes over [0.1,0.5]).
+    const pct    = Math.round(state.monocleScale * 100);
+    const filled = Math.round((state.monocleScale - MIN) / (MAX - MIN) * 10);
+    showOsd(`PlasmaFlow  size ${ratioBar(filled)}  ${pct}%`);
+}
+
 // ─── Register shortcuts ─────────────────────────────────────────────────────
 
 registerShortcut(
     "PlasmaFlow: Cycle Layout",
     "PlasmaFlow: Cycle Layout",
     "Meta+T",
-    () => { if (workspace.activeWindow) cycleLayout(workspace.activeWindow); }
+    () => { if (workspace.activeWindow) cycleLayout(workspace.activeWindow, false); }
+);
+
+registerShortcut(
+    "PlasmaFlow: Cycle Layout (All)",
+    "PlasmaFlow: Cycle Layout (All)",
+    "Meta+Shift+T",
+    () => { if (workspace.activeWindow) cycleLayout(workspace.activeWindow, true); }
+);
+
+registerShortcut(
+    "PlasmaFlow: Mirror Layout",
+    "PlasmaFlow: Mirror Layout",
+    "Meta+M",
+    () => { if (workspace.activeWindow) toggleMirror(workspace.activeWindow); }
 );
 
 registerShortcut(
     "PlasmaFlow: Swap with Master",
     "PlasmaFlow: Swap with Master",
-    "Meta+Return",
+    "Meta+G",
     () => { if (workspace.activeWindow) swapWithMaster(workspace.activeWindow); }
 );
 
 registerShortcut(
     "PlasmaFlow: Focus Next",
     "PlasmaFlow: Focus Next",
-    "Meta+J",
+    "Meta+K",
     () => { if (workspace.activeWindow) focusNext(workspace.activeWindow); }
 );
 
 registerShortcut(
     "PlasmaFlow: Focus Prev",
     "PlasmaFlow: Focus Prev",
-    "Meta+K",
+    "Meta+J",
     () => { if (workspace.activeWindow) focusPrev(workspace.activeWindow); }
 );
 
 registerShortcut(
     "PlasmaFlow: Move Window Down",
     "PlasmaFlow: Move Window Down",
-    "Meta+Ctrl+J",
+    "Meta+Ctrl+K",
     () => { if (workspace.activeWindow) moveNext(workspace.activeWindow); }
 );
 
 registerShortcut(
     "PlasmaFlow: Move Window Up",
     "PlasmaFlow: Move Window Up",
-    "Meta+Ctrl+K",
+    "Meta+Ctrl+J",
     () => { if (workspace.activeWindow) movePrev(workspace.activeWindow); }
 );
 

@@ -47,6 +47,45 @@
       <default>spiral</default>
     </entry>
 
+    <!-- One Bool per layout: which layouts Meta+T cycles through. Unticking a
+         layout only removes it from that rotation — Meta+Shift+T still cycles
+         every layout, and a pinned/default/restored layout is unaffected. -->
+    <entry name="enableMasterStack" type="Bool">
+      <label>Cycle master-stack</label>
+      <tooltip>Include the master-stack layout in the Meta+T rotation.</tooltip>
+      <default>true</default>
+    </entry>
+
+    <entry name="enableColumns" type="Bool">
+      <label>Cycle columns</label>
+      <tooltip>Include the columns layout in the Meta+T rotation.</tooltip>
+      <default>true</default>
+    </entry>
+
+    <entry name="enableMonocle" type="Bool">
+      <label>Cycle monocle</label>
+      <tooltip>Include the monocle layout in the Meta+T rotation.</tooltip>
+      <default>true</default>
+    </entry>
+
+    <entry name="enableSpotlight" type="Bool">
+      <label>Cycle spotlight</label>
+      <tooltip>Include the spotlight layout in the Meta+T rotation.</tooltip>
+      <default>true</default>
+    </entry>
+
+    <entry name="enableSpiral" type="Bool">
+      <label>Cycle spiral</label>
+      <tooltip>Include the spiral layout in the Meta+T rotation.</tooltip>
+      <default>true</default>
+    </entry>
+
+    <entry name="enableQuadrant" type="Bool">
+      <label>Cycle quadrant</label>
+      <tooltip>Include the quadrant layout in the Meta+T rotation.</tooltip>
+      <default>true</default>
+    </entry>
+
     <entry name="defaultMasterRatio" type="Double">
       <label>Default master width</label>
       <tooltip>Fraction of the usable width given to the master pane (master-stack only). Adjust live with Meta+H / Meta+L.</tooltip>
