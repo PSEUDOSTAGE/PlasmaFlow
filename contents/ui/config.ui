@@ -67,6 +67,45 @@ quadrant: 2x2 grid (fills TL, TR, BR, BL); Meta+H/L grows a window diagonally.</
    </item>
 
    <item>
+    <widget class="QGroupBox" name="groupEnabled">
+     <property name="title"><string>Layouts in the Meta+T Cycle</string></property>
+     <property name="toolTip"><string>Untick a layout you never use to drop it from the Meta+T rotation. Meta+Shift+T still cycles through every layout, and the default, pinned and remembered layouts are unaffected. Unticking all of them leaves every layout in the cycle.</string></property>
+     <layout class="QVBoxLayout" name="vboxEnabled">
+      <item>
+       <widget class="QCheckBox" name="kcfg_enableMasterStack">
+        <property name="text"><string>master-stack — one master pane + a stack column</string></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="kcfg_enableColumns">
+        <property name="text"><string>columns — equal vertical columns</string></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="kcfg_enableMonocle">
+        <property name="text"><string>monocle — one fullscreen window at a time</string></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="kcfg_enableSpotlight">
+        <property name="text"><string>spotlight — master fullscreen, others in the corners</string></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="kcfg_enableSpiral">
+        <property name="text"><string>spiral — Fibonacci spiral</string></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="kcfg_enableQuadrant">
+        <property name="text"><string>quadrant — 2x2 grid</string></property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+
+   <item>
     <widget class="QGroupBox" name="groupMaster">
      <property name="title"><string>Master-Stack &amp; Spotlight</string></property>
      <layout class="QFormLayout" name="formMaster">

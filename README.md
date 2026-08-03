@@ -56,7 +56,8 @@ make package
 
 | Shortcut       | Action                          |
 |----------------|---------------------------------|
-| Meta + T       | Cycle layout                    |
+| Meta + T       | Cycle layout (only the layouts enabled in settings) |
+| Meta + Shift + T | Cycle layout including disabled ones          |
 | Meta + M       | Mirror the layout horizontally  |
 | Meta + G       | Swap focused window with master |
 | Meta + K       | Focus next window               |
@@ -111,6 +112,10 @@ A 2×2 grid. Windows fill the quadrants in the order **TL → TR → BR → BL**
 **Meta+H/L** grow/shrink the **focused** window *diagonally* — it expands from its own corner toward the centre, keeping its proportions, while the other windows adjust to make room (the diagonally-opposite window shrinks to match). Because the whole grid pivots on a single point, growing a *different* window first pulls the grid back to even (shrinking whichever window is currently largest), and only then starts to enlarge the focused one — so you can always get back to an even grid by growing the small window.
 
 Opening a **5th** window (or more) doesn't disturb the grid: the extra windows **float and cascade in the centre**, ready to move where you like or pull into another layout with **Meta+F**.
+
+### Trimming the cycle
+
+If you only use some of these, untick the rest under **Configure → Layouts in the Meta+T Cycle** and **Meta+T** will skip them. Nothing becomes unreachable: **Meta+Shift+T** cycles through *every* layout regardless, and the default layout, per-desktop pins and remembered session layouts all still work with a layout you've unticked (the OSD marks it `(disabled)` so it's clear why Meta+T won't return to it). Unticking every layout leaves them all in the cycle rather than breaking the key.
 
 ---
 

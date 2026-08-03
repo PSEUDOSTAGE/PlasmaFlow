@@ -22,6 +22,30 @@ function normalizeLayoutName(value) {
     return "master-stack";
 }
 
+// Which layouts Meta+T cycles through. One Bool config entry per layout so the
+// KCM can show plain checkboxes; collected here into a list in LAYOUT_NAMES
+// order (the cycle order). Disabling a layout only removes it from the Meta+T
+// rotation — Meta+Shift+T, a pinned desktop layout, the default layout and a
+// restored session layout all still reach it, so nothing a user explicitly
+// asked for is blocked by a checkbox.
+const LAYOUT_ENABLE_KEYS = {
+    "master-stack": "enableMasterStack",
+    "columns":      "enableColumns",
+    "monocle":      "enableMonocle",
+    "spotlight":    "enableSpotlight",
+    "spiral":       "enableSpiral",
+    "quadrant":     "enableQuadrant",
+};
+
+function readEnabledLayouts() {
+    const on = LAYOUT_NAMES.filter(
+        name => readConfig(LAYOUT_ENABLE_KEYS[name], true)
+    );
+    // Unticking every box would leave Meta+T with nothing to cycle; treat that
+    // degenerate case as "all enabled" rather than making the key dead.
+    return on.length ? on : LAYOUT_NAMES.slice();
+}
+
 // Model B: parse "1=master-stack,2=columns" into { "1": "master-stack", ... }.
 function parseDesktopLayouts(raw) {
     const map = {};
@@ -50,6 +74,8 @@ function loadConfig() {
         floatClasses:         readConfig("floatClasses",
             "steam,plasmashell,krunner,yakuake,spectacle,kruler,plasma-desktop"
         ).split(",").map(s => s.trim().toLowerCase()),
+        // Layouts Meta+T rotates through (Meta+Shift+T ignores this).
+        enabledLayouts:       readEnabledLayouts(),
         // Meta+T overrides the pinned layout for the session only.
         desktopLayouts:       parseDesktopLayouts(readConfig("desktopLayouts", "")),
     };
@@ -887,23 +913,41 @@ function removeWindow(window) {
 
 // ─── Keyboard shortcuts ─────────────────────────────────────────────────────
 
-function cycleLayout(window) {
+// Next layout after `current`, walking LAYOUT_NAMES in order and skipping any
+// name not in `allowed`. Walking the *full* order (rather than indexing into
+// `allowed`) keeps the rotation stable when the current layout is itself
+// disabled — as it can be after Meta+Shift+T, a pin, or a restored session —
+// since a disabled current has no index in `allowed` to advance from.
+function nextLayout(current, allowed) {
+    const start = LAYOUT_NAMES.indexOf(current);
+    for (let i = 1; i <= LAYOUT_NAMES.length; i++) {
+        const name = LAYOUT_NAMES[(start + i) % LAYOUT_NAMES.length];
+        if (allowed.indexOf(name) !== -1) return name;
+    }
+    return current;
+}
+
+// Meta+T cycles the enabled layouts; Meta+Shift+T (includeDisabled) cycles all
+// of them, so a layout you've unticked is still reachable on demand.
+function cycleLayout(window, includeDisabled) {
     const state = getState(window);
     if (!state) return;
 
-    const keys = Object.keys(layouts);
-    const idx  = keys.indexOf(state.layout);
-    state.layout = keys[(idx + 1) % keys.length];
+    const allowed = includeDisabled ? LAYOUT_NAMES : CONFIG.enabledLayouts;
+    state.layout  = nextLayout(state.layout, allowed);
 
     tile(window);
     persistState(
         stateKey(window.screen, window.desktops[0].id),
         state
     );
-    // Mark as session-overridden if it differs from pinned layout
+    // Mark as session-overridden if it differs from pinned layout, and flag a
+    // layout that's off in the config (only reachable via Meta+Shift+T) so it's
+    // obvious why Meta+T won't come back to it.
     const overridden = state.pinnedLayout && state.layout !== state.pinnedLayout
         ? ` (pinned: ${state.pinnedLayout})` : "";
-    showOsd(`PlasmaFlow: ${state.layout}${overridden}`);
+    const off = CONFIG.enabledLayouts.indexOf(state.layout) === -1 ? " (disabled)" : "";
+    showOsd(`PlasmaFlow: ${state.layout}${off}${overridden}`);
 }
 
 // Toggle the horizontal mirror for the focused window's desktop. mirrored is
@@ -1332,7 +1376,14 @@ registerShortcut(
     "PlasmaFlow: Cycle Layout",
     "PlasmaFlow: Cycle Layout",
     "Meta+T",
-    () => { if (workspace.activeWindow) cycleLayout(workspace.activeWindow); }
+    () => { if (workspace.activeWindow) cycleLayout(workspace.activeWindow, false); }
+);
+
+registerShortcut(
+    "PlasmaFlow: Cycle Layout (All)",
+    "PlasmaFlow: Cycle Layout (All)",
+    "Meta+Shift+T",
+    () => { if (workspace.activeWindow) cycleLayout(workspace.activeWindow, true); }
 );
 
 registerShortcut(
