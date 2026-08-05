@@ -14,7 +14,7 @@
 - **6 layouts**: spiral (Fibonacci, the default), master-stack, columns, monocle, spotlight, quadrant (2×2 grid) — switchable per virtual desktop
 - **Configurable gaps**: inner and outer, live-adjustable
 - **Borderless tiling** (optional): strip title bars and borders from tiled windows for a clean i3-style look
-- **Smart float detection**: dialogs, splash screens, non-resizable windows auto-float
+- **Smart float detection**: dialogs, modal prompts (file-save, "file already exists"), splash screens and non-resizable windows auto-float
 - **Per-app float rules**: define window classes that always float
 - **Keyboard-driven**: i3-style shortcuts for focus, swap, layout cycle, float toggle
 - **Per-desktop layout pinning** (Model B): pin a layout to a desktop in config; Meta+T overrides for the session only

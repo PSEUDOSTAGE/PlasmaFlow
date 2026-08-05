@@ -296,6 +296,17 @@ function getState(window) {
 function shouldFloat(window) {
     if (scratchWindows.indexOf(window) !== -1)             return true;
     if (window.dialog || window.utility || window.splash) return true;
+    // Modal transients — file-save prompts, "File Already Exists", overwrite
+    // confirmations. On Wayland these are the same category as `dialog`, but
+    // xdg-shell carries no window type, so KWin leaves `dialog` false on them
+    // and they were being tiled. `modal` is the flag that does survive: it
+    // means the window blocks its parent, which is never something to tile.
+    // Verified on this build — Firefox's save prompt (which is actually the
+    // portal, class org.freedesktop.impl.portal.desktop.kde) and Dolphin's
+    // File/Folder-Already-Exists prompts all report modal=true, while every
+    // ordinary app window reports false. Preferred over matching captions,
+    // which are localized and would only work in English.
+    if (window.modal)                                      return true;
     if (window.fullScreen)                                 return true;
     if (!window.resizeable)                                return true;
 
