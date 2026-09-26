@@ -99,7 +99,8 @@ const CONFIG = loadConfig();
 const layoutState = {};
 
 // Windows parked in the scratchpad. They live outside the tile layout entirely
-// (never tiled) and are summoned/dismissed together with Meta+Grave.
+// (never tiled) and are summoned/dismissed together with Meta+Space. The list
+// is saved by window id so it survives a script reload (see persistScratchpad).
 const scratchWindows = [];
 
 // monocle scale bounds. A single per-desktop fraction sizing the shared monocle
@@ -1086,7 +1087,7 @@ function sendToAdjacentDesktop(window, dir) {
 // ─── Scratchpad ──────────────────────────────────────────────────────────────
 // Any number of windows can be parked in the scratchpad. They live outside the
 // tiling layout (shouldFloat keeps them un-tiled) and are summoned/dismissed
-// together with Meta+Grave: "hidden" = minimized; "shown" = un-minimized, pulled
+// together with Meta+Space: "hidden" = minimized; "shown" = un-minimized, pulled
 // to the current desktop, and focused — each window keeps its own size and
 // position. We deliberately never resize or reposition scratchpad windows: a
 // window is parked exactly as it sits, and whatever the user moves/resizes it to
@@ -1102,6 +1103,38 @@ function windowOnDesktop(window, desktop) {
     return false;
 }
 
+// The scratchpad list lives in script memory, so without this a script reload
+// (a KDE Store update, disable/enable in the KCM, `make reload`) would forget
+// every parked window and leave it stranded as a plain minimized window. We save
+// the parked windows' internalIds — "{uuid}" strings, stable for a window's
+// lifetime — through the same plasmashell ConfigFile path as persistState, and
+// re-adopt matching windows at load (restoreScratchpad). Ids don't survive
+// logout; stale ones simply match nothing and are pruned on the next write.
+function persistScratchpad() {
+    const value = scratchWindows.map(w => String(w.internalId)).join(",");
+    if (persistedCache.scratchpad === value) return;
+    persistedCache.scratchpad = value;
+    // Only braces, hex digits, dashes and commas — safe to embed unescaped.
+    plasmaEval(
+        'var c = new ConfigFile("kwinrc", "Script-plasma-flow");' +
+        'c.writeEntry("persist:scratchpad", "' + value + '");'
+    );
+}
+
+// Re-adopt windows that were parked before this script instance loaded. Must run
+// before the init loop tiles existing windows: shouldFloat() then sees them in
+// scratchWindows and leaves them out of the layout.
+function restoreScratchpad(windows) {
+    const saved = String(readConfig("persist:scratchpad", ""));
+    persistedCache.scratchpad = saved;
+    const ids = saved.split(",").filter(Boolean);
+    if (ids.length === 0) return;
+    for (const w of windows) {
+        if (ids.indexOf(String(w.internalId)) !== -1) scratchWindows.push(w);
+    }
+    persistScratchpad();   // drops ids of windows that no longer exist
+}
+
 // Park the focused window in the scratchpad and hide it. Pulling it out of the
 // tile list via removeWindow() reflows the rest of its desktop.
 function sendToScratchpad(window) {
@@ -1109,6 +1142,7 @@ function sendToScratchpad(window) {
     if (scratchWindows.indexOf(window) !== -1) return;   // already parked
     removeWindow(window);                                 // untile + reflow source
     scratchWindows.push(window);
+    persistScratchpad();
     window.minimized = true;                              // hide it
     const n = scratchWindows.length;
     showOsd("PlasmaFlow: scratchpad (" + n + " window" + (n === 1 ? "" : "s") + ")");
@@ -1128,7 +1162,7 @@ function showScratchpad(desktop) {
 
 // Toggle: if the scratchpad is already showing on the current desktop, hide it;
 // otherwise summon every parked window to the current desktop. This makes
-// Meta+Grave from another desktop pull the scratchpad to you rather than hide it.
+// Meta+Space from another desktop pull the scratchpad to you rather than hide it.
 function toggleScratchpad() {
     if (scratchWindows.length === 0) { showOsd("PlasmaFlow: scratchpad is empty"); return; }
 
@@ -1157,7 +1191,7 @@ function toggleFloat(window) {
         // window, eject it from the scratchpad first so it tiles (this is how a
         // summoned scratchpad window is sent back to the desktop).
         const si = scratchWindows.indexOf(window);
-        if (si !== -1) scratchWindows.splice(si, 1);
+        if (si !== -1) { scratchWindows.splice(si, 1); persistScratchpad(); }
         addWindow(window);
     }
 }
@@ -1557,7 +1591,7 @@ function onWindowAdded(window) {
 workspace.windowAdded.connect(onWindowAdded);
 workspace.windowRemoved.connect((window) => {
     const si = scratchWindows.indexOf(window);
-    if (si !== -1) scratchWindows.splice(si, 1);          // parked window closed
+    if (si !== -1) { scratchWindows.splice(si, 1); persistScratchpad(); }  // parked window closed
     removeWindow(window);
 });
 
@@ -1575,6 +1609,7 @@ if (workspace.screensChanged) workspace.screensChanged.connect(retileAll);
 // `workspace.windows` was added in later KWin 6.x; `stackingOrder` is the
 // long-standing way to enumerate every window. Fall back across versions.
 const existingWindows = workspace.windows || workspace.stackingOrder || [];
+restoreScratchpad(existingWindows);
 for (const window of existingWindows) {
     onWindowAdded(window);
 }
