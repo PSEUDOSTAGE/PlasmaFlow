@@ -10,3 +10,8 @@
 
 # Claude Code local settings
 .claude/
+
+# Working markdown — plan/progress docs and Claude's project notes stay local.
+# README.md is the only user-facing doc that ships.
+*.md
+!README.md
