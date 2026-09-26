@@ -29,6 +29,16 @@ PlasmaFlow is a KWin script, not a separate window manager. It runs inside KWin,
 
 ## Install
 
+### From the KDE Store (recommended)
+
+1. Open **System Settings → Window Management → KWin Scripts**.
+2. Click **Get New…**, search for **PlasmaFlow** and install it.
+3. Tick **PlasmaFlow** in the list and click **Apply**.
+
+Updates arrive the same way, through **Get New…**.
+
+### From source
+
 ```bash
 git clone https://github.com/PSEUDOSTAGE/PlasmaFlow.git
 cd PlasmaFlow
