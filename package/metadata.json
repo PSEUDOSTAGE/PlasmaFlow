@@ -6,12 +6,14 @@
                 "Name": "PSEUDOSTAGE"
             }
         ],
-        "Description": "A Wayland-first dynamic tiling script for KDE Plasma 6.4+. Supports master/stack, columns, and floating layouts with per-app rules and gap control.",
+        "Description": "Keyboard-driven, Wayland-first dynamic tiling for KDE Plasma 6.4+: spiral, master-stack, columns, monocle, spotlight and quadrant layouts, focus-relative resizing, a scratchpad, and per-desktop layouts.",
         "Icon": "plasmaflow",
         "Id": "plasma-flow",
         "License": "GPL-3.0",
         "Name": "PlasmaFlow",
-        "Version": "0.2.0"
+        "Version": "0.4.0",
+        "Website": "https://github.com/PSEUDOSTAGE/PlasmaFlow",
+        "BugReportUrl": "https://github.com/PSEUDOSTAGE/PlasmaFlow/issues"
     },
     "X-KDE-ConfigModule": "kwin/effects/configs/kcm_kwin4_genericscripted",
     "X-Plasma-API": "javascript",

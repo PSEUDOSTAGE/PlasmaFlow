@@ -168,14 +168,33 @@ function plasmaEval(script) {
 // parent "plasma" — a real Breeze icon that outranks our file in the lower-
 // priority user hicolor theme. So "plasma-flow" always resolved to the stock
 // Plasma logo. A no-dash name has no such parent and resolves to our file.
-// `make install` still rewrites OSD_ICON (the @OSD_ICON@-tagged line below) to
-// the absolute installed path, which sidesteps theme lookup entirely; the source
-// keeps the portable theme name so the distributed zip works without make.
+// `make install` rewrites OSD_ICON (the @OSD_ICON@-tagged line below) to the
+// absolute path of the PNG it puts in hicolor, which sidesteps theme lookup.
+// A package install (KDE Store / kpackagetool) never runs make, so there's no
+// hicolor icon and the theme name finds nothing. For that case
+// resolveOsdIcon() asks plasmashell — the script engine has no file or $HOME
+// access of its own — where the packaged copy of the icon landed, and switches
+// to that absolute path once the async reply arrives.
 const OSD_ICON = "plasmaflow"; /* @OSD_ICON@ */
+const PACKAGED_ICON = "kwin/scripts/plasma-flow/imgs/plasmaflow-icon.png";
+let osdIcon = OSD_ICON;
+function resolveOsdIcon() {
+    if (osdIcon.charAt(0) === "/" || typeof callDBus !== "function") return;
+    callDBus("org.kde.plasmashell", "/PlasmaShell",
+             "org.kde.PlasmaShell", "evaluateScript",
+             'var u = userDataPath("data", "' + PACKAGED_ICON + '"),' +
+             ' s = "/usr/share/' + PACKAGED_ICON + '";' +
+             'print(fileExists(u) ? u : fileExists(s) ? s : "");',
+             function (path) {
+                 path = String(path || "").trim();
+                 if (path.charAt(0) === "/") osdIcon = path;
+             });
+}
+resolveOsdIcon();
 function showOsd(text) {
     if (typeof callDBus !== "function") return;
     callDBus("org.kde.plasmashell", "/org/kde/osdService",
-             "org.kde.osdService", "showText", OSD_ICON, text);
+             "org.kde.osdService", "showText", osdIcon, text);
 }
 
 /**

@@ -22,7 +22,11 @@ all: package
 package:
 	@echo "→ Packaging $(SCRIPT_ID).kwinscript..."
 	@cp -r $(PACKAGE_DIR)/metadata.json metadata.json
-	@zip -r $(SCRIPT_ID).kwinscript contents/ imgs/ metadata.json
+	@# Start from a fresh archive (zip -r would otherwise keep stale entries).
+	@# Only the icon ships from imgs/: main.js looks it up there at runtime for
+	@# the OSD, since a package install never runs 'make install'.
+	@rm -f $(SCRIPT_ID).kwinscript
+	@zip -r $(SCRIPT_ID).kwinscript contents/ imgs/plasmaflow-icon.png metadata.json
 	@rm metadata.json
 	@echo "✓ Built $(SCRIPT_ID).kwinscript"
 
