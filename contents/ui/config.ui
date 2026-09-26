@@ -10,6 +10,14 @@
  <widget class="QWidget" name="Form">
   <layout class="QVBoxLayout" name="rootLayout">
 
+   <!-- KWin gives scripts no config-change signal, so settings only apply on reload. -->
+   <item>
+    <widget class="QLabel" name="labelReloadHint">
+     <property name="text"><string>&lt;i&gt;Changes apply after reloading PlasmaFlow: untick it in the KWin Scripts list, Apply, tick it again, Apply.&lt;/i&gt;</string></property>
+     <property name="wordWrap"><bool>true</bool></property>
+    </widget>
+   </item>
+
    <item>
     <widget class="QGroupBox" name="groupGaps">
      <property name="title"><string>Gaps</string></property>
@@ -107,7 +115,7 @@ quadrant: 2x2 grid (fills TL, TR, BR, BL); Meta+H/L grows a window diagonally.</
 
    <item>
     <widget class="QGroupBox" name="groupMaster">
-     <property name="title"><string>Master-Stack &amp; Spotlight</string></property>
+     <property name="title"><string>Master-Stack &amp;&amp; Spotlight</string></property>
      <layout class="QFormLayout" name="formMaster">
       <item row="0" column="0">
        <widget class="QLabel" name="labelMasterRatio"><property name="text"><string>Default master width:</string></property></widget>
@@ -202,9 +210,7 @@ quadrant: 2x2 grid (fills TL, TR, BR, BL); Meta+H/L grows a window diagonally.</
 
    <item>
     <widget class="QLabel" name="hint">
-     <property name="text"><string>Changes take effect after the script reloads: untick PlasmaFlow in the KWin Scripts list, Apply, re-tick it, Apply. (KWin does not notify running scripts of config changes.)
-
-Window-class names are lowercase, matched against class or title. Shortcuts are rebindable in System Settings → Shortcuts → KWin Scripts.</string></property>
+     <property name="text"><string>Window-class names are lowercase, matched against class or title. Shortcuts are rebindable in System Settings → Keyboard → Shortcuts → KWin.</string></property>
      <property name="wordWrap"><bool>true</bool></property>
      <property name="enabled"><bool>false</bool></property>
     </widget>
