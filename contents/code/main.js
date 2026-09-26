@@ -84,7 +84,6 @@ function loadConfig() {
 // Read once at load. KWin gives workspace scripts no config-change signal and
 // caches their config until the script is reloaded, so settings changes only
 // take effect after a reload (KCM disable/enable, or `make reload`).
-// See CLAUDE.md "Config system".
 const CONFIG = loadConfig();
 
 // ─── Layout engine import (KWin scripts use plain JS, no ES modules) ────────
@@ -125,7 +124,7 @@ const MONOCLE_SCALE_MAX     = 1.0;
 // are all absent (only the read-only global readConfig() exists, used for CONFIG).
 // callDBus *is* available, but it cannot marshal D-Bus struct types — so systemd's
 // StartTransientUnit (a(sv)/a(sa(sv))) fails and we can't shell out to
-// kwriteconfig6 that way either. (All verified live on this build; see CLAUDE.md.)
+// kwriteconfig6 that way either. (All verified live.)
 //
 // The one path that works: callDBus into the always-running plasmashell, whose
 // scripting engine *does* expose a `ConfigFile` object that writes KConfig. We
@@ -154,8 +153,8 @@ function plasmaEval(script) {
 // ─── On-screen display ───────────────────────────────────────────────────────
 //
 // KWin scripts have NO `osd` global — the early assumption that a global `osd`
-// with a .show() method exists was wrong (same class of bug as the other
-// non-existent APIs in CLAUDE.md):
+// with a .show() method exists was wrong (same class of bug as the missing
+// config-write API above):
 // every call threw "osd is not defined" and no OSD ever appeared. The real OSD is
 // plasmashell's osdService over DBus: org.kde.osdService.showText(icon, text)
 // (signature "ss"). Fire-and-forget / best-effort, exactly like plasmaEval — a
@@ -169,7 +168,6 @@ function plasmaEval(script) {
 // parent "plasma" — a real Breeze icon that outranks our file in the lower-
 // priority user hicolor theme. So "plasma-flow" always resolved to the stock
 // Plasma logo. A no-dash name has no such parent and resolves to our file.
-// (See CLAUDE.md "OSD icon" / "icon name must be dash-free".)
 // `make install` still rewrites OSD_ICON (the @OSD_ICON@-tagged line below) to
 // the absolute installed path, which sidesteps theme lookup entirely; the source
 // keeps the portable theme name so the distributed zip works without make.
@@ -626,8 +624,8 @@ const layouts = {
      *
      * For 3+ windows the grid is governed by a single cross point (cfg.quad.cx,
      * cfg.quad.cy). Every quadrant shares that point, so moving it grows one
-     * window diagonally and shrinks the others to match (see adjustQuadrant and
-     * "Focus-relative resizing / quadrant" in CLAUDE.md). At 2 windows only the
+     * window diagonally and shrinks the others to match (see adjustQuadrant).
+     * At 2 windows only the
      * vertical split (cfg.quad.split) applies.
      *
      * A 5th+ window never reaches this function as a tile — addWindow floats and
@@ -682,8 +680,8 @@ const layouts = {
 //
 // columns, master-stack (stack), and spiral let Meta+H/L resize the *focused*
 // window relative to its neighbours. The sizes live on `state` but are NOT
-// persisted — window order is too fragile to save (see Session persistence in
-// CLAUDE.md), so they reset whenever the layout or visible-window count changes.
+// persisted — window order is too fragile to save (apps open, crash and relaunch
+// in different orders), so they reset whenever the layout or visible-window count changes.
 // Only the master/first-cut split (masterRatio) persists, as it always has.
 
 // Lazily (re)build a proportional size-weight array on `state.sizes`, tagged with

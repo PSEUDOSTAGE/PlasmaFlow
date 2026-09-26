@@ -6,7 +6,7 @@ CONTENTS_DIR = ./contents
 # ICON_NAME is intentionally DASH-FREE and NOT $(SCRIPT_ID): a "plasma-flow" name
 # is stripped by Qt6's freedesktop dash-fallback to the stock "plasma" Breeze
 # icon (which outranks our user-hicolor file), so it never showed our logo in the
-# OSD or the KWin Scripts list. "plasmaflow" has no such parent. See CLAUDE.md.
+# OSD or the KWin Scripts list. "plasmaflow" has no such parent.
 ICON_NAME   = plasmaflow
 ICON_SRC    = ./imgs/plasmaflow-icon.png
 ICON_DIR    = $(HOME)/.local/share/icons/hicolor/256x256/apps
@@ -38,7 +38,7 @@ install:
 	@cp $(PACKAGE_DIR)/metadata.json "$(INSTALL_DIR)/"
 	@# Point the OSD icon at the absolute installed path. plasmashell's OSD does
 	@# not reliably resolve our hicolor icon by theme name in a running session,
-	@# but loads an absolute path fine (see CLAUDE.md "OSD icon"). We rewrite only
+	@# but loads an absolute path fine (see OSD_ICON in main.js). We rewrite only
 	@# the installed copy; the committed source keeps the portable theme name.
 	@sed -i 's|^const OSD_ICON = .*@OSD_ICON@.*|const OSD_ICON = "$(ICON_DEST)"; /* @OSD_ICON@ */|' "$(INSTALL_DIR)/contents/code/main.js"
 	@# Install the logo into the hicolor icon theme (still used by the plugin

@@ -3,38 +3,32 @@
 </p>
 
 <p align="center">
-  A Wayland-first dynamic tiling KWin script for KDE Plasma 6.4+.<br>
-  Fills the gap left by Bismuth (archived) with a clean, modern, Plasma 6-native codebase.
+  A keyboard-driven, Wayland-first dynamic tiling script for KDE Plasma 6.4+.
 </p>
 
 ---
 
+PlasmaFlow is a KWin script, not a separate window manager. It runs inside KWin, installs with no compilation, and is configured from System Settings. It picks up where Bismuth (archived) left off, with a codebase written for the Plasma 6 scripting API from the start.
+
 ## Features
 
-- **6 layouts**: spiral (Fibonacci, the default), master-stack, columns, monocle, spotlight, quadrant (2×2 grid) — switchable per virtual desktop
-- **Configurable gaps**: inner and outer, live-adjustable
-- **Borderless tiling** (optional): strip title bars and borders from tiled windows for a clean i3-style look
-- **Smart float detection**: dialogs, modal prompts (file-save, "file already exists"), splash screens and non-resizable windows auto-float
-- **Per-app float rules**: define window classes that always float
-- **Keyboard-driven**: i3-style shortcuts for focus, swap, layout cycle, float toggle
-- **Per-desktop layout pinning** (Model B): pin a layout to a desktop in config; Meta+T overrides for the session only
-- **Session persistence**: each desktop's layout and master width are remembered across logout/login
-- **KCM settings panel**: proper UI in System Settings, no config file editing needed
-- **Plasma 6 + Wayland native**: uses KWin 6 scripting API throughout
-
----
+- **Six layouts:** spiral (the default), master-stack, columns, monocle, spotlight and quadrant. Each virtual desktop has its own layout.
+- **Focus-relative resizing:** Meta+H/L grow or shrink the *focused* window, not just the master.
+- **Mirroring:** Meta+M flips the current desktop's layout left↔right.
+- **Scratchpad:** a hidden layer of floating windows you can summon onto any desktop.
+- **Smart floating:** dialogs, modal prompts, splash screens and fixed-size windows float automatically. You can also list apps that should always float.
+- **Per-desktop pinning:** give desktop 2 columns and desktop 3 spotlight, for example.
+- **Session persistence:** each desktop's layout and sizes are remembered across logout.
+- **Borderless tiling (optional):** strips title bars from tiled windows.
+- **Native settings panel** under System Settings → KWin Scripts, with no config files to edit.
 
 ## Requirements
 
-- **KDE Plasma 6.4+ on Wayland.** Developed and tested against 6.4+; earlier 6.x releases expose different KWin scripting APIs and may fail to load.
-- **A running `plasmashell`.** Session persistence and the on-screen ratio/layout feedback are driven through plasmashell's scripting/OSD D-Bus interfaces. Both are best-effort: if plasmashell isn't running (or a future Plasma changes those interfaces), they silently no-op — tiling itself is unaffected.
-- X11 may work but is not a supported target.
-
----
+- **KDE Plasma 6.4 or newer, on Wayland.** Earlier 6.x releases expose different scripting APIs and may fail to load the script. X11 may work but isn't supported.
+- **A running `plasmashell`.** On-screen feedback and session persistence go through plasmashell's D-Bus interfaces. Without it, both quietly do nothing and tiling works as normal.
 
 ## Install
 
-### From source
 ```bash
 git clone https://github.com/PSEUDOSTAGE/PlasmaFlow.git
 cd PlasmaFlow
@@ -42,144 +36,108 @@ make install
 make reload
 ```
 
-Then enable in **System Settings → Window Management → KWin Scripts → PlasmaFlow**.
+Then enable it in **System Settings → Window Management → KWin Scripts → PlasmaFlow**.
 
-### As .kwinscript (KDE Store / manual)
-```bash
-make package
-# Import plasma-flow.kwinscript via System Settings → KWin Scripts → Import
-```
+To update, `git pull` and run the same two `make` commands. To remove it, run `make uninstall`.
 
----
+## Shortcuts
 
-## Default Shortcuts
-
-| Shortcut       | Action                          |
-|----------------|---------------------------------|
-| Meta + T       | Cycle layout (only the layouts enabled in settings) |
-| Meta + Shift + T | Cycle layout including disabled ones          |
-| Meta + M       | Mirror the layout horizontally  |
-| Meta + G       | Swap focused window with master |
-| Meta + K       | Focus next window               |
-| Meta + J       | Focus previous window           |
-| Meta + Ctrl + K | Move focused window down in tile order |
-| Meta + Ctrl + J | Move focused window up in tile order   |
-| Meta + Left    | Send focused window to previous desktop |
-| Meta + Right   | Send focused window to next desktop     |
+| Shortcut | Action |
+|---|---|
+| Meta + T | Cycle layout (enabled layouts only) |
+| Meta + Shift + T | Cycle through every layout |
+| Meta + M | Mirror the layout horizontally |
+| Meta + J / K | Focus previous / next window |
+| Meta + Ctrl + J / K | Move focused window up / down in tile order |
+| Meta + G | Swap focused window with master |
+| Meta + H / L | Shrink / grow the focused window |
+| Meta + F | Toggle float |
+| Meta + Left / Right | Send window to previous / next desktop |
 | Meta + Ctrl + Space | Park focused window in the scratchpad |
-| Meta + Space   | Summon / dismiss the scratchpad |
-| Meta + F       | Toggle float (also ejects a summoned scratchpad window into tiling) |
-| Meta + L       | Grow the focused window (master-stack/columns/spiral, quadrant diagonally, monocle slot) or corner size (spotlight) |
-| Meta + H       | Shrink the focused window (master-stack/columns/spiral, quadrant diagonally, monocle slot) or corner size (spotlight) |
+| Meta + Space | Summon / dismiss the scratchpad |
 
-Shortcuts can be rebound in **System Settings → Shortcuts → KWin Scripts**.
+To rebind any of these, go to **System Settings → Keyboard → Shortcuts → KWin**.
 
-> **⚠️ Meta+T conflicts with KDE's built-in "Toggle Tiles Editor".**
-> KWin ships with **Meta+T** bound to its tile-editor overlay, so out of the box it will fire instead of (or alongside) PlasmaFlow's *Cycle layout*. To free it up:
-> **System Settings → Keyboard → Shortcuts**, search **`Toggle Tiles Editor`**, click its **Meta+T** chip and clear it, then **Apply**.
+### Conflicts with KDE defaults
 
-> **⚠️ Meta+Left / Meta+Right are KDE's default "Quick Tile Left/Right".**
-> Send-to-desktop uses these. If you still have KDE's quick-tiling on those keys, clear it: **System Settings → Keyboard → Shortcuts**, search **`Quick Tile`**, and clear the **Meta+Left/Right** chips. (Most tiling-script users have already disabled KDE quick-tiling.) *Why arrows and not Meta+Shift+1–9? KWin can't fire script shortcuts on the shifted number row under Wayland, and plain Meta+1–9 is taken by the task manager.*
+Some of these keys are already taken by KDE out of the box. Clear the KDE binding in **System Settings → Keyboard → Shortcuts** (search for the action name, clear its chip, then Apply):
 
-> **ℹ️ Scratchpad uses Meta+Space (toggle) and Meta+Ctrl+Space (park).**
-> These avoid the grave/tilde key, whose shifted keysym can't fire a script shortcut under Wayland. If **Meta+Space** is bound to something else on your system (e.g. a custom KRunner or keyboard-layout-switch binding), clear it in **System Settings → Keyboard → Shortcuts**.
+| Key | KDE default action | Notes |
+|---|---|---|
+| Meta + T | Toggle Tiles Editor | |
+| Meta + L | Lock Screen | Bind locking to another key first if you still want it |
+| Meta + Left / Right | Quick Tile Window to the Left / Right | Most tiling users have already disabled this |
+| Meta + Space | *(none by default)* | Only an issue if you've bound it yourself, e.g. to KRunner or layout switching |
 
-> **⚠️ Meta+L is KDE's default "Lock Screen" shortcut.**
-> PlasmaFlow uses it to *grow the focused window* (master-stack / columns / spiral / quadrant / monocle) or *corner size* (spotlight), so out of the box pressing it will lock the screen instead. To free it up: **System Settings → Keyboard → Shortcuts**, search **`Lock Screen`** (the *Screen Locking* action), click its **Meta+L** chip and clear it, then **Apply** — re-bind locking to another key first if you still want a lock shortcut.
+<details>
+<summary>Why these keys?</summary>
 
----
+Under Wayland, KWin scripts can't receive shortcuts on shifted symbol keys. That rules out Meta+Shift+1–9 and Meta+Shift+\`. Plain Meta+1–9 already belongs to the task manager. So desktop moves use the arrow keys, and the scratchpad uses Space.
+</details>
 
 ## Layouts
 
-### spiral *(default)*
-Fibonacci spiral: the area is split recursively, alternating vertical/horizontal cuts and spiralling clockwise inward (left → top → right → bottom → …), with the last window filling the centre. **Meta+H/L** grow/shrink the **focused** window along its own cut — e.g. the top window grows downward, the right window grows leftward. The final (centre) window resizes via the cut it borders.
+**spiral** *(default)* is a Fibonacci spiral. The screen is split repeatedly, turning clockwise, and the last window fills the centre. Meta+H/L move the focused window's own split.
 
-### master-stack
-Left master pane, right stack column. 1 window fills the screen. Default 50/50 split. **Meta+H/L** resize the **focused** window: the master's width when it's focused, or a stack window's height (relative to its neighbours) when a stack window is focused.
+**master-stack** puts one master on the left and a stack on the right. With the master focused, Meta+H/L set its width. With a stack window focused, they set that window's height.
 
-### columns
-Equal-width vertical columns. Great for wide monitors. **Meta+H/L** grow/shrink the **focused** column's width.
+**columns** gives every window an equal-width column. Meta+H/L widen or narrow the focused column.
 
-### monocle
-All windows share one slot, stacked; only the focused one shows. Cycle focus with Meta+J/K. **Meta+H/L** shrink/grow that shared slot and re-centre it, so the focused window pulls toward screen centre with wallpaper margin around it (default is full-screen — nothing changes until you press Meta+H). The scale is per-desktop and remembered across logout.
+**monocle** shows one window at a time, and Meta+J/K cycle through them. Meta+H shrinks the shared slot toward the centre of the screen, leaving a margin of wallpaper around it. Meta+L grows it back to full screen.
 
-### spotlight
-Master fills the entire screen, kept behind the corner windows so it never covers them when focused. Stack windows sit in the corners, clockwise from bottom-right: BR → TR → TL → BL. More than 4 stack windows overflow into a second layer, scaled down by 70%, sitting behind the first. Corner size is configurable (default 38% of screen dimensions) and can be adjusted on the fly with **Meta+H/L**.
+**spotlight** gives the master the full screen, with the other windows in the corners (bottom-right, top-right, top-left, bottom-left). Past four, extra windows go into a smaller second layer. Meta+H/L resize the corners.
 
-### quadrant
-A 2×2 grid. Windows fill the quadrants in the order **TL → TR → BR → BL**: one window is fullscreen, two split the screen left/right, three fill three quadrants with the **bottom-left left empty**, and four take one quadrant each.
+**quadrant** is a 2×2 grid, filled top-left, top-right, bottom-right, bottom-left. Meta+H/L grow the focused window diagonally from its corner. If another window is currently the largest, the grid first evens out, then the focused window grows. A 5th window and beyond float in a cascade in the centre.
 
-**Meta+H/L** grow/shrink the **focused** window *diagonally* — it expands from its own corner toward the centre, keeping its proportions, while the other windows adjust to make room (the diagonally-opposite window shrinks to match). Because the whole grid pivots on a single point, growing a *different* window first pulls the grid back to even (shrinking whichever window is currently largest), and only then starts to enlarge the focused one — so you can always get back to an even grid by growing the small window.
-
-Opening a **5th** window (or more) doesn't disturb the grid: the extra windows **float and cascade in the centre**, ready to move where you like or pull into another layout with **Meta+F**.
-
-### Trimming the cycle
-
-If you only use some of these, untick the rest under **Configure → Layouts in the Meta+T Cycle** and **Meta+T** will skip them. Nothing becomes unreachable: **Meta+Shift+T** cycles through *every* layout regardless, and the default layout, per-desktop pins and remembered session layouts all still work with a layout you've unticked (the OSD marks it `(disabled)` so it's clear why Meta+T won't return to it). Unticking every layout leaves them all in the cycle rather than breaking the key.
-
----
-
-## Appearance
-
-This option lives in **System Settings → KWin Scripts → PlasmaFlow → Configure** and defaults to **off**. Config isn't read live — after changing it, reload the script (disable/enable it in the KCM, or `make reload`).
-
-### Borderless tiling
-**Remove window borders when tiled** strips the title bar and borders from every tiled window for a clean, chrome-free i3/Sway look. Decorations are automatically restored when a window leaves the layout — float it (**Meta+F**) or park it in the scratchpad and the title bar comes back. Windows that draw their own decorations (client-side, e.g. some GTK apps) are unaffected.
-
-> **Telling the active window apart.** With title bars gone, the focused-colour title bar is no longer your active-window cue. The cleanest fix is KWin's built-in **Dim Inactive** effect (**System Settings → Desktop Effects → Dim Inactive**): inactive windows dim and the focused one stays full-brightness. It has a strength slider and pairs perfectly with borderless tiling. (A drawn outline/glow isn't possible from a KWin *script* — that needs a compositor effect.)
-
----
+To drop layouts you don't use from Meta+T, untick them in the settings. Meta+Shift+T still reaches every layout. A pinned or remembered layout still works even if it's unticked.
 
 ## Scratchpad
 
-A hidden layer for windows you want out of the way but a keystroke away. It holds **any number** of windows.
+A hidden stash for windows you want out of the way but only a keystroke away.
 
-- **Park** a window: focus it and press **Meta + Ctrl + Space**. It leaves the layout (the rest reflow) and hides — kept exactly at its current size and position.
-- **Summon / dismiss**: **Meta + Space** brings every parked window to your current desktop (floating, each in place); press again to hide them. Move or resize a summoned window however you like — it keeps that size and position the next time you summon it, even as you park more windows.
-- **Send back to tiling**: summon the scratchpad, focus a window, and press **Meta + F** — it drops into the current desktop's layout and leaves the scratchpad.
+- **Park:** Meta+Ctrl+Space removes the focused window from the layout and hides it.
+- **Summon / dismiss:** Meta+Space brings every parked window to the current desktop, floating. Press it again to hide them. Each window keeps whatever size and position you give it.
+- **Return to tiling:** focus a summoned window and press Meta+F.
 
-**Tip — move a window to any desktop, even non-adjacent ones:** park it, switch to whatever desktop you want (no matter how far), summon with **Meta + Space**, then **Meta + F** to tile it there. Meta+Left/Right only move to *neighbouring* desktops, so the scratchpad is the quickest way to send a window somewhere far.
+**Tip:** the scratchpad is also the quickest way to move a window to a desktop that isn't next to the current one. Park it, switch desktops, summon it, then press Meta+F.
 
----
+## Configuration
 
-## Project Structure
+Settings live in **System Settings → Window Management → KWin Scripts → PlasmaFlow → Configure**. Changes take effect after the script reloads: disable and re-enable it there, or run `make reload`.
 
-```
-PlasmaFlow/
-├── contents/
-│   ├── code/
-│   │   └── main.js       ← Tiling engine + KWin signal wiring
-│   ├── config/
-│   │   └── main.xml      ← KConfigXT schema (config keys + defaults)
-│   └── ui/
-│       └── config.ui     ← Settings panel (KCM, Qt Designer)
-├── package/
-│   └── metadata.json     ← KWin plugin manifest
-├── Makefile
-└── README.md
-```
+| Setting | Default | |
+|---|---|---|
+| Inner / outer gap | 8 px / 8 px | |
+| Default layout | spiral | |
+| Layouts in the Meta+T cycle | all | |
+| Default master width | 0.5 | Also the first split in spiral |
+| Resize step | 0.05 | Per Meta+H/L press |
+| Spotlight corner size | 0.38 | Fraction of the screen |
+| Always-float window classes | steam, plasmashell, krunner, yakuake, spectacle, kruler, plasma-desktop | Matches class or title |
+| Per-desktop pinned layouts | *(none)* | e.g. `1=master-stack,2=columns,3=spotlight` |
+| Float new windows by default | off | |
+| Remember layout per desktop | on | |
+| Remove window borders when tiled | off | See below |
 
----
+Pinned layouts apply when a desktop is first opened. Meta+T overrides the pin, and the override is remembered.
+
+**Borderless tiling** hides title bars and borders on tiled windows. They come back as soon as a window floats or goes into the scratchpad. Apps that draw their own title bars (some GTK apps) aren't affected. Without title bars it can be hard to spot the active window, so pair this with KWin's **Dim Inactive** effect (System Settings → Desktop Effects).
 
 ## Roadmap
 
-- [x] Master width ratio adjustment (Meta+H / Meta+L) (v0.1)
-- [x] Spotlight layout (v0.2)
-- [x] Per-desktop layout pinning — Model B (v0.2)
-- [x] Minimized windows drop out of the layout; the rest reflow
-- [x] Move window in tile order (Meta+Ctrl+J / Meta+Ctrl+K) (v0.3)
-- [x] Send window to previous/next desktop (Meta+Left / Meta+Right) (v0.3)
-- [x] Session persistence — layout + ratio per desktop, remembered across logout/login (v0.3)
-- [x] Spiral / Fibonacci layout — now the default (v0.3)
-- [x] Scratchpad (multi-window hidden floating layer; doubles as send-to-any-desktop) (v0.3)
-- [x] Borderless tiling — optional no-decoration mode (pairs with KWin's Dim Inactive effect)
-- [x] Quadrant layout — 2×2 grid with diagonal focus-relative resizing; overflow windows float and cascade
-- [ ] Multi-monitor awareness (independent layout per screen)
-- [ ] Plasma widget for layout indicator in taskbar
-
----
+- [ ] Multi-monitor support: an independent, tested layout per screen
+- [ ] A panel widget that shows and cycles the current layout
+- [ ] Per-app rules, e.g. always open as master
+- [ ] KDE Store release
 
 ## Contributing
 
-Built by PSEUDOSTAGE for KDE Plasma 6 power users. PRs welcome.
-Tested against KDE Plasma 6.4+ on Wayland.
+Issues and PRs are welcome. Everything lives in `contents/code/main.js`. Test changes with `make install && make reload`. If the script fails to load, `journalctl --user -b | grep plasma-flow` shows the error.
+
+## License
+
+[GPL-3.0](LICENSE)
+
+## Credits
+
+Built by PSEUDOSTAGE, with [Claude](https://claude.ai) (Anthropic) as a development collaborator throughout.
