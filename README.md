@@ -140,7 +140,6 @@ Pinned layouts apply when a desktop is first opened. Meta+T overrides the pin, a
 - [ ] Multi-monitor support: an independent, tested layout per screen
 - [ ] A panel widget that shows and cycles the current layout
 - [ ] Per-app rules, e.g. always open as master
-- [ ] KDE Store release
 
 ## Contributing
 
