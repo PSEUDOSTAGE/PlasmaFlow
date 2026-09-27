@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  A keyboard-driven, Wayland-first dynamic tiling script for KDE Plasma 6.4+.
+  A keyboard-driven dynamic tiling script for KDE Plasma 6.4+ with Wayland.
 </p>
 
 ---
